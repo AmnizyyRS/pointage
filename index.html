@@ -1,0 +1,557 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Pointage">
+<meta name="theme-color" content="#080808">
+<meta name="format-detection" content="telephone=no">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<link rel="icon" type="image/png" href="favicon.png">
+<style>html{box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px);-webkit-text-size-adjust:100%}body{margin:0}img{max-width:100%}html,body{overscroll-behavior:none}</style>
+<title>Pointage</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Figtree:wght@400;500;600;700&display=swap">
+<style>
+/* Layout: one screen, iOS-like. Departure time on top, today's punches, live iPhone clock + Entrée/Sortie buttons in the thumb zone. Everything else lives in sheets. */
+:root{
+  --bg:#080808; --raised:#141414; --hair:#1F1F1F;
+  --fg:#FFFFFF; --muted:#8E8E93; --faint:#48484A;
+  --red:#E8192C; --ok:#30D158;
+  --f-display:"Bebas Neue","Oswald","Arial Narrow",Impact,sans-serif;
+  --f-body:"Figtree",-apple-system,system-ui,"Segoe UI",sans-serif;
+  --f-logo:"Red Hat Display","Figtree",system-ui,sans-serif;
+  color-scheme:dark;
+}
+html,body{height:100%;background:var(--bg);color:var(--fg)}
+body{font-family:var(--f-body);font-size:17px;line-height:1.4;-webkit-font-smoothing:antialiased;
+  padding-left:max(24px,env(safe-area-inset-left,0px));padding-right:max(24px,env(safe-area-inset-right,0px))}
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+button,input{font:inherit;color:inherit}
+button{cursor:pointer;-webkit-tap-highlight-color:transparent}
+:focus-visible{outline:2px solid var(--red);outline-offset:3px;border-radius:6px}
+.num{font-variant-numeric:tabular-nums}
+
+.app{max-width:440px;min-height:100%;margin:0 auto;padding-block:20px 24px;display:flex;flex-direction:column}
+
+header{display:flex;justify-content:space-between;align-items:center}
+.logo{font-weight:700;font-size:19px;letter-spacing:-.01em}
+.logo span{color:var(--red)}
+.date{color:var(--muted);font-size:15px;font-weight:500}
+
+.hero{margin-top:7vh;display:flex;flex-direction:column}
+.kicker{color:var(--muted);font-size:15px;font-weight:500}
+.time{font-family:var(--f-display);font-size:clamp(68px,21vw,88px);line-height:.9;letter-spacing:.01em;margin-top:4px}
+.time.pos{color:var(--ok)} .time.neg{color:var(--red)}
+.bar{height:4px;background:var(--hair);border-radius:2px;overflow:hidden;margin-top:20px}
+.bar i{display:block;height:100%;background:var(--red);border-radius:2px;width:0;transition:width .6s ease}
+.meta{display:flex;justify-content:space-between;gap:12px;margin-top:10px;font-size:15px;color:var(--muted)}
+.meta b{color:var(--fg);font-weight:600}
+
+.proj{margin-top:24px;background:var(--raised);border-radius:14px;padding:14px 16px;display:flex;flex-direction:column;gap:10px}
+.proj-main{display:flex;justify-content:space-between;align-items:center;gap:12px}
+.proj-main span{color:var(--muted);font-size:15px;font-weight:500;display:flex;align-items:center;gap:6px;flex-wrap:wrap}
+.proj-main input{background:var(--bg);border:0;border-radius:8px;padding:4px 8px;color:var(--fg);font-size:16px;font-weight:600;font-variant-numeric:tabular-nums}
+.proj-main input:focus{outline:2px solid var(--red)}
+.proj-main b{font-size:26px;font-weight:700;letter-spacing:-.01em}
+.proj-rows{display:flex;flex-direction:column;gap:4px;border-top:1px solid var(--hair);padding-top:10px}
+.proj-row{display:flex;justify-content:space-between;font-size:14px;color:var(--muted)}
+.proj-row b{font-weight:600}
+.proj-warn{font-size:13px;color:var(--red);margin:-4px 0 0}
+.today{margin-top:26px;display:flex;flex-direction:column;gap:10px}
+.today-head{display:flex;justify-content:space-between;align-items:baseline}
+.today-head span{color:var(--muted);font-size:15px;font-weight:500}
+.today-head button{border:0;background:none;color:var(--red);font-size:15px;font-weight:600;padding:4px 0}
+.punches{display:flex;flex-wrap:wrap;gap:8px}
+.p{background:var(--raised);border:0;border-radius:10px;padding:8px 12px;display:flex;flex-direction:column;align-items:flex-start;gap:0;min-width:76px}
+.p small{font-size:12px;color:var(--muted);font-weight:500}
+.p b{font-size:18px;font-weight:600}
+.p.in small::before,.p.out small::before{content:"";display:inline-block;width:6px;height:6px;border-radius:50%;margin-right:5px;vertical-align:1px}
+.p.in small::before{background:var(--ok)} .p.out small::before{background:var(--red)}
+.p.empty{color:var(--faint);font-size:15px;background:none;padding:8px 0}
+
+.bottom{margin-top:auto;padding-top:36px;display:flex;flex-direction:column;gap:12px}
+.live{text-align:center;color:var(--muted);font-size:14px;font-weight:500}
+.live b{color:var(--fg);font-weight:600;letter-spacing:.02em}
+.punch{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.pb{border:0;border-radius:16px;height:76px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;background:var(--raised);color:var(--faint);transition:transform .08s,opacity .15s}
+.pb span{font-weight:700;font-size:19px}
+.pb small{font-size:13px;font-weight:500;opacity:.8}
+.pb.on{background:var(--red);color:#fff}
+.pb.on.out{background:var(--fg);color:var(--bg)}
+.pb:not(.on){cursor:default}
+.pb.on:active{transform:scale(.97);opacity:.9}
+
+.week{display:flex;justify-content:center;gap:18px;font-size:14px;color:var(--muted);min-height:20px}
+.week b{font-weight:600}
+.pos{color:var(--ok)} .neg{color:var(--red)}
+.links{display:flex;justify-content:center;gap:26px;margin-top:-4px}
+.links button{border:0;background:none;color:var(--muted);font-size:14px;font-weight:500;padding:8px 2px}
+
+/* sheets */
+.scrim{position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:20;display:flex;align-items:flex-end;justify-content:center}
+.sheet{background:var(--raised);width:100%;max-width:500px;max-height:88%;overflow:auto;border-radius:16px 16px 0 0;
+  padding:10px max(22px,env(safe-area-inset-left,0px)) calc(24px + env(safe-area-inset-bottom,0px)) max(22px,env(safe-area-inset-right,0px));display:flex;flex-direction:column;gap:18px}
+.grab{width:36px;height:5px;border-radius:3px;background:var(--faint);align-self:center}
+.sheet h3{margin:0;font-size:20px;font-weight:700}
+.list{display:flex;flex-direction:column;border-radius:12px;overflow:hidden;background:var(--bg)}
+.item{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:13px 14px;border:0;background:none;text-align:left;width:100%;min-height:50px}
+.item + .item{border-top:1px solid var(--hair)}
+.item small{display:block;color:var(--muted);font-size:13px;margin-top:1px}
+.item input{background:none;border:0;text-align:right;color:var(--fg);font-size:17px;min-width:0;width:auto;max-width:150px}
+.item input:focus{outline:none;color:var(--red)}
+.item .r{font-weight:600}
+.item .grow{flex:1}
+.x{border:0;background:var(--hair);color:var(--muted);width:28px;height:28px;border-radius:14px;font-size:16px;line-height:1;flex:none}
+.note{color:var(--muted);font-size:13px;margin:-6px 4px 0}
+.err{color:var(--red);font-size:14px;margin:0}
+.row{display:flex;gap:10px}
+.row .ghost,.row .cta{flex:1}
+.cta{border:0;border-radius:14px;background:var(--red);color:#fff;font-weight:600;font-size:17px;height:52px;width:100%}
+.ghost{border:0;border-radius:14px;background:var(--bg);color:var(--fg);font-weight:600;font-size:17px;height:52px}
+.addp{border:0;background:none;color:var(--red);font-weight:600;font-size:16px;text-align:left;padding:4px 4px}
+.danger{border:0;background:none;color:var(--red);font-weight:500;font-size:16px;height:44px}
+.toggle{accent-color:var(--red);width:20px;height:20px}
+.seg{display:grid;grid-template-columns:1fr 1fr;background:var(--bg);border-radius:9px;padding:2px}
+.seg button{border:0;background:none;color:var(--muted);font-weight:600;font-size:14px;height:32px;border-radius:7px}
+.seg button.on{background:var(--faint);color:var(--fg)}
+.nav{display:flex;align-items:center;justify-content:space-between;gap:8px}
+.nav button{border:0;background:none;color:var(--fg);font-size:26px;width:40px;height:40px;border-radius:20px;line-height:1}
+.nav button[disabled]{color:var(--faint);cursor:default}
+.nav div{text-align:center;font-weight:700;font-size:18px}
+.nav small{display:block;color:var(--muted);font-weight:500;font-size:13px}
+.sum{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.sum div{display:flex;flex-direction:column;gap:2px;color:var(--muted);font-size:13px}
+.sum b{color:var(--fg);font-size:24px;font-weight:700;letter-spacing:-.01em}
+.item.future{color:var(--faint)}
+.mini{display:block;height:3px;background:var(--hair);border-radius:2px;margin-top:7px;width:120px;overflow:hidden}
+.mini i{display:block;height:100%;background:var(--red)}
+.mini i.full{background:var(--ok)}
+.toast{position:fixed;left:50%;top:calc(14px + env(safe-area-inset-top,0px));transform:translateX(-50%);background:var(--raised);color:var(--fg);font-size:14px;font-weight:500;padding:6px 6px 6px 16px;min-height:40px;border-radius:20px;z-index:30;white-space:nowrap;display:flex;align-items:center;gap:12px;box-shadow:0 6px 24px rgba(0,0,0,.5)}
+.toast button{border:0;background:var(--hair);color:var(--red);font-weight:600;font-size:14px;border-radius:14px;padding:6px 12px}
+.toast:not(.undo){padding-right:16px}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+</head>
+<body>
+
+
+<div class="app">
+  <header>
+    <div class="logo">Pointage<span>.</span></div>
+    <div class="date" id="date"></div>
+  </header>
+
+  <section class="hero" aria-live="polite">
+    <div class="kicker" id="kicker">Départ</div>
+    <div class="time num" id="time">--:--</div>
+    <div class="bar" aria-hidden="true"><i id="fill"></i></div>
+    <div class="meta"><span id="meta-l"></span><span id="meta-r"></span></div>
+  </section>
+
+  <section class="proj" id="proj" hidden aria-live="polite">
+    <div class="proj-main"><span id="proj-label">Si tu sors à <input type="time" id="proj-out" aria-label="Heure de sortie prévue"></span><b class="num" id="proj-bal"></b></div>
+    <p class="proj-warn" id="proj-warn" hidden></p>
+    <div class="proj-rows">
+      <div class="proj-row"><span>Semaine</span><span class="num" id="proj-wk"></span></div>
+      <div class="proj-row"><span>Compteur</span><span class="num" id="proj-tot"></span></div>
+    </div>
+  </section>
+
+  <section class="today">
+    <div class="today-head"><span>Pointages du jour</span><button id="btn-edit">Modifier</button></div>
+    <div class="punches" id="punches"></div>
+  </section>
+
+  <section class="bottom">
+    <div class="live">Heure de l'iPhone <b class="num" id="clock">--:--:--</b></div>
+    <div class="punch">
+      <button class="pb" id="btn-in"><span>Entrée</span><small class="num" id="in-t"></small></button>
+      <button class="pb out" id="btn-out"><span>Sortie</span><small class="num" id="out-t"></small></button>
+    </div>
+    <div class="week" id="week"></div>
+    <div class="links">
+      <button id="btn-hist">Suivi</button>
+      <button id="btn-settings">Réglages</button>
+    </div>
+  </section>
+</div>
+
+<div class="scrim" id="scrim" hidden></div>
+<div class="toast" id="toast" hidden><span id="toast-msg"></span><button id="toast-undo" hidden>Annuler</button></div>
+
+<script>
+(() => {
+  const LS_KEY = "pointage.v1";
+  const DEFAULT_SETTINGS = { daily: 504, pauseMin: 30, winStart: 390, winEnd: 540, clampStart: false, minOut: 945 };
+  let state = { settings: { ...DEFAULT_SETTINGS }, days: {} };
+  let col = null, synced = false;
+
+  // ---- helpers ----
+  const pad = n => String(n).padStart(2, "0");
+  const toMin = s => { if (!s) return null; const [h, m] = s.split(":").map(Number); return h * 60 + m; };
+  const clock = m => { m = ((Math.round(m) % 1440) + 1440) % 1440; return pad(Math.floor(m / 60)) + ":" + pad(m % 60); };
+  const hm = m => { m = Math.max(0, Math.round(m)); return Math.floor(m / 60) + "h" + pad(m % 60); };
+  const signed = m => { m = Math.round(m); return (m < 0 ? "−" : "+") + hm(Math.abs(m)); };
+  const dateKey = d => d.getFullYear() + "-" + pad(d.getMonth() + 1) + "-" + pad(d.getDate());
+  const nowMin = () => { const d = new Date(); return d.getHours() * 60 + d.getMinutes(); };
+  const parseKey = k => { const [y, mo, d] = k.split("-").map(Number); return new Date(y, mo - 1, d); };
+  const J = ["dim.", "lun.", "mar.", "mer.", "jeu.", "ven.", "sam."];
+  const M = ["janv.", "févr.", "mars", "avr.", "mai", "juin", "juil.", "août", "sept.", "oct.", "nov.", "déc."];
+  const longDate = d => J[d.getDay()] + " " + d.getDate() + " " + M[d.getMonth()];
+  const mondayOf = d => { const x = new Date(d); x.setDate(x.getDate() - (x.getDay() + 6) % 7); x.setHours(0, 0, 0, 0); return x; };
+  const sortTimes = a => a.filter(Boolean).sort((x, y) => toMin(x) - toMin(y));
+  // accepts the new {punches:[…]} shape and the older {in,bs,be,out} shape
+  const norm = v => ({ punches: sortTimes(Array.isArray(v && v.punches) ? v.punches : [v && v.in, v && v.bs, v && v.be, v && v.out]) });
+
+  try {
+    const c = JSON.parse(localStorage.getItem(LS_KEY) || "null");
+    if (c && c.days) { const days = {}; Object.keys(c.days).forEach(k => { const r = norm(c.days[k]); if (r.punches.length) days[k] = r; }); state = { settings: { ...DEFAULT_SETTINGS, ...(c.settings || {}) }, days }; }
+  } catch (e) {}
+  const lsWrite = () => { try { localStorage.setItem(LS_KEY, JSON.stringify(state)); } catch (e) {} };
+
+  // ---- core calc: alternating Entrée / Sortie ----
+  function calc(rec, isToday) {
+    const s = state.settings, n = nowMin();
+    const p = (rec && rec.punches || []).map(toMin);
+    if (!p.length) return null;
+    if (s.clampStart) p[0] = Math.max(p[0], s.winStart);
+    let raw = 0, gaps = 0;
+    for (let i = 0; i < p.length; i += 2) {
+      const a = p[i], b = i + 1 < p.length ? p[i + 1] : (isToday ? n : null);
+      if (b != null) raw += Math.max(0, b - a);
+      if (i > 0) gaps += Math.max(0, p[i] - p[i - 1]);
+    }
+    const inside = p.length % 2 === 1;
+    const pauseDue = Math.max(0, s.pauseMin - gaps);
+    const net = Math.max(0, raw - pauseDue);
+    const remaining = s.daily + pauseDue - raw;
+    return {
+      inside, raw, gaps, pauseDue, net, remaining,
+      first: p[0], last: p[p.length - 1],
+      target: inside && isToday ? n + remaining : null,
+      complete: !inside, balance: !inside ? net - s.daily : null
+    };
+  }
+
+  // ---- persistence ----
+  const docId = k => "d" + k.replace(/-/g, "");
+  function saveDay(k, rec) {
+    if (rec && rec.punches.length) state.days[k] = rec; else { delete state.days[k]; rec = null; }
+    lsWrite();
+    if (col) { const ref = col.doc(docId(k)); (rec ? ref.set({ kind: "day", date: k, punches: rec.punches }) : ref.delete()).catch(() => toast("Hors connexion, gardé sur le téléphone")); }
+    render();
+  }
+  function saveSettings() { lsWrite(); if (col) col.doc("settings").set({ kind: "settings", ...state.settings }).catch(() => {}); render(); }
+
+  async function connect() {
+    if (!window.claude || !window.claude.use) return;
+    try {
+      const [db, u] = await Promise.all([window.claude.use("db"), window.claude.use("user")]);
+      if (!db || !u) return;
+      const uid = await u.id(); if (!uid) return;
+      col = db.collection("data/users/" + uid);
+      let first = true;
+      col.onSnapshot(snap => {
+        const days = {}; let settings = null;
+        snap.docs.forEach(doc => { const v = doc.data(); if (!v) return;
+          if (v.kind === "settings") settings = v;
+          else if (v.kind === "day" && v.date) { const r = norm(v); if (r.punches.length) days[v.date] = r; } });
+        if (first) {
+          first = false;
+          Object.keys(state.days).forEach(k => { if (!days[k]) { days[k] = state.days[k]; col.doc(docId(k)).set({ kind: "day", date: k, punches: state.days[k].punches }).catch(() => {}); } });
+          if (!settings) col.doc("settings").set({ kind: "settings", ...state.settings }).catch(() => {});
+        }
+        state.days = days;
+        if (settings) { const { kind, ...rest } = settings; state.settings = { ...DEFAULT_SETTINGS, ...rest }; }
+        synced = true; lsWrite(); render();
+      }, () => { synced = false; });
+    } catch (e) {}
+  }
+
+  // ---- render ----
+  const $ = id => document.getElementById(id);
+  function render() {
+    const now = new Date(), tk = dateKey(now), n = nowMin(), s = state.settings;
+    const rec = state.days[tk] || { punches: [] };
+    const c = calc(rec, true);
+    $("date").textContent = longDate(now);
+
+    const time = $("time"); time.className = "time num";
+    if (!c) {
+      $("kicker").textContent = "Départ si tu entres maintenant";
+      time.textContent = clock(Math.max(n + s.daily + s.pauseMin, s.minOut ?? 0));
+      $("fill").style.width = "0%";
+      $("meta-l").innerHTML = `${hm(s.daily)} + ${s.pauseMin} min de pause`; $("meta-r").textContent = "";
+    } else if (c.inside) {
+      const blocked = s.minOut != null && s.minOut > c.target;
+      const leave = blocked ? s.minOut : c.target;
+      $("kicker").textContent = blocked ? `Départ · pas avant ${clock(s.minOut)}` : "Départ";
+      time.textContent = clock(leave);
+      $("fill").style.width = Math.min(100, c.raw / (c.raw + Math.max(0, c.remaining)) * 100).toFixed(1) + "%";
+      $("meta-l").innerHTML = `<b>${hm(c.raw)}</b> de présence`;
+      if (blocked) $("meta-r").innerHTML = c.remaining > 0 ? `${hm(s.daily)} atteintes à <b>${clock(c.target)}</b>` : `<b class="pos">${signed(-c.remaining)}</b> · encore <b>${hm(s.minOut - n)}</b>`;
+      else $("meta-r").innerHTML = c.remaining > 0 ? `encore <b>${hm(c.remaining)}</b>` : `<b class="pos">${signed(-c.remaining)}</b>`;
+    } else {
+      $("kicker").textContent = `Sorti à ${clock(c.last)} · solde du jour`;
+      time.textContent = signed(c.balance); time.classList.add(c.balance >= 0 ? "pos" : "neg");
+      $("fill").style.width = Math.min(100, c.net / s.daily * 100).toFixed(1) + "%";
+      $("meta-l").innerHTML = `<b>${hm(c.net)}</b> comptées`;
+      $("meta-r").textContent = c.pauseDue > 0 ? `pause ${s.pauseMin} min déduite` : `pause ${hm(c.gaps)}`;
+    }
+
+    $("punches").innerHTML = rec.punches.length
+      ? rec.punches.map((t, i) => `<button class="p ${i % 2 ? "out" : "in"}" data-edit><small>${i % 2 ? "Sortie" : "Entrée"}</small><b class="num">${t}</b></button>`).join("")
+      : `<span class="p empty">Aucun pointage pour l'instant</span>`;
+
+    const nextIsIn = rec.punches.length % 2 === 0;
+    $("btn-in").classList.toggle("on", nextIsIn); $("btn-out").classList.toggle("on", !nextIsIn);
+    $("btn-in").setAttribute("aria-disabled", String(!nextIsIn)); $("btn-out").setAttribute("aria-disabled", String(nextIsIn));
+
+    const mon = mondayOf(now); let wk = 0, tot = 0, any = false;
+    Object.keys(state.days).forEach(k => { const r = calc(state.days[k], k === tk); if (!r || !r.complete) return; any = true; tot += r.balance; if (parseKey(k) >= mon) wk += r.balance; });
+    $("week").innerHTML = any && !c ? `<span>Semaine <b class="num ${wk >= 0 ? "pos" : "neg"}">${signed(wk)}</b></span><span>Cumul <b class="num ${tot >= 0 ? "pos" : "neg"}">${signed(tot)}</b></span>` : "";
+
+    // projection fin de journée
+    const sg = m => `<b class="${m >= 0 ? "pos" : "neg"}">${signed(m)}</b>`;
+    const proj = $("proj"), inp = $("proj-out");
+    proj.hidden = !c;
+    if (c && c.inside) {
+      if (projDay !== tk) { projDay = tk; projOut = null; }
+      const auto = s.minOut != null ? Math.max(c.target, s.minOut) : c.target;
+      const L = projOut != null ? projOut : auto;
+      if (document.activeElement !== inp) inp.value = clock(L);
+      inp.parentElement.firstChild.textContent = projOut != null ? "Si tu sors à " : "À ta sortie, ";
+      inp.hidden = false;
+      const pb = L - c.target;
+      $("proj-bal").className = "num " + (pb >= 0 ? "pos" : "neg"); $("proj-bal").textContent = signed(pb);
+      $("proj-wk").innerHTML = `${signed(wk)} → ${sg(wk + pb)}`;
+      $("proj-tot").innerHTML = `${signed(tot)} → ${sg(tot + pb)}`;
+      const w = $("proj-warn");
+      if (s.minOut != null && L < s.minOut) { w.textContent = `Avant ${clock(s.minOut)} : accord de la direction nécessaire.`; w.hidden = false; } else w.hidden = true;
+    } else if (c) {
+      inp.parentElement.firstChild.textContent = "Ajouté aujourd'hui";
+      inp.hidden = true; $("proj-warn").hidden = true;
+      $("proj-bal").className = "num " + (c.balance >= 0 ? "pos" : "neg"); $("proj-bal").textContent = signed(c.balance);
+      $("proj-wk").innerHTML = `${signed(wk - c.balance)} → ${sg(wk)}`;
+      $("proj-tot").innerHTML = `${signed(tot - c.balance)} → ${sg(tot)}`;
+    }
+    tick();
+  }
+
+  let projOut = null, projDay = null;
+  $("proj-out").addEventListener("change", e => { const v = toMin(e.target.value); projOut = v; render(); });
+
+  let lastMin = -1;
+  function tick() {
+    const d = new Date();
+    $("clock").textContent = pad(d.getHours()) + ":" + pad(d.getMinutes()) + ":" + pad(d.getSeconds());
+    const t = pad(d.getHours()) + ":" + pad(d.getMinutes());
+    $("in-t").textContent = t; $("out-t").textContent = t;
+    const m = d.getHours() * 60 + d.getMinutes();
+    if (lastMin !== -1 && m !== lastMin) { lastMin = m; render(); return; }
+    lastMin = m;
+  }
+
+  // ---- punch ----
+  function punch(kind) {
+    const tk = dateKey(new Date());
+    const before = state.days[tk] ? { punches: [...state.days[tk].punches] } : null;
+    const rec = { punches: before ? [...before.punches] : [] };
+    const nextIsIn = rec.punches.length % 2 === 0;
+    if ((kind === "in") !== nextIsIn) return;
+    const t = clock(nowMin());
+    rec.punches.push(t);
+    saveDay(tk, rec);
+    toast((kind === "in" ? "Entrée" : "Sortie") + " à " + t, () => saveDay(tk, before));
+  }
+  $("btn-in").onclick = () => punch("in");
+  $("btn-out").onclick = () => punch("out");
+  $("btn-edit").onclick = () => openDay(dateKey(new Date()));
+  $("punches").addEventListener("click", e => { if (e.target.closest("[data-edit]")) openDay(dateKey(new Date())); });
+  $("btn-hist").onclick = () => { track = { mode: "week", anchor: new Date() }; drawTrack(); };
+  $("btn-settings").onclick = openSettings;
+
+  const scrim = $("scrim");
+  const openSheet = html => { scrim.innerHTML = `<div class="sheet" role="dialog" aria-modal="true"><div class="grab"></div>${html}</div>`; scrim.hidden = false; };
+  const closeSheet = () => { scrim.hidden = true; scrim.innerHTML = ""; };
+  scrim.addEventListener("click", e => { if (e.target === scrim) closeSheet(); });
+  document.addEventListener("keydown", e => { if (e.key === "Escape" && !scrim.hidden) closeSheet(); });
+
+  // ---- edit a day ----
+  function openDay(k, isNew, draft) {
+    const existing = state.days[k];
+    const times = draft ? draft.times : [...(existing ? existing.punches : [])];
+    const dateVal = draft ? draft.date : k;
+    const rows = times.map((t, i) => `<div class="item"><span class="grow">${i % 2 ? "Sortie" : "Entrée"}</span><input type="time" data-i="${i}" value="${t}"><button class="x" data-del="${i}" aria-label="Supprimer ce pointage">×</button></div>`).join("");
+    openSheet(`<h3>${isNew ? "Ajouter un jour" : longDate(parseKey(k))}</h3>
+      <div class="list"><label class="item"><span>Date</span><input type="date" id="ed-date" value="${dateVal}"></label></div>
+      ${times.length ? `<div class="list">${rows}</div>` : ""}
+      <button class="addp" id="ed-add">+ Ajouter ${times.length % 2 ? "une sortie" : "une entrée"}</button>
+      <p class="note">Les pointages sont remis dans l'ordre à l'enregistrement. Si tes pauses font moins de ${state.settings.pauseMin} min au total, la différence est déduite.</p>
+      <p class="err" id="ed-err" hidden></p>
+      <div class="row"><button class="ghost" id="ed-cancel">Annuler</button><button class="cta" id="ed-save">Enregistrer</button></div>
+      ${existing && !isNew ? `<button class="danger" id="ed-del">Supprimer cette journée</button>` : ""}`);
+    const read = () => ({ date: $("ed-date").value, times: [...scrim.querySelectorAll("input[data-i]")].map(i => i.value) });
+    $("ed-add").onclick = () => { const d = read(); d.times.push(d.date === dateKey(new Date()) ? clock(nowMin()) : (d.times.length ? d.times[d.times.length - 1] : "08:00")); openDay(k, isNew, d); };
+    scrim.querySelectorAll("[data-del]").forEach(b => b.onclick = () => { const d = read(); d.times.splice(+b.dataset.del, 1); openDay(k, isNew, d); });
+    $("ed-cancel").onclick = closeSheet;
+    $("ed-save").onclick = () => {
+      const d = read(), err = m => { $("ed-err").textContent = m; $("ed-err").hidden = false; };
+      if (!d.date) return err("Choisis une date.");
+      const punches = sortTimes(d.times);
+      if (!punches.length && !existing) return err("Ajoute au moins une entrée.");
+      if (!isNew && d.date !== k && existing) saveDay(k, null);
+      saveDay(d.date, { punches }); closeSheet(); toast("Enregistré");
+    };
+    const del = $("ed-del");
+    if (del) del.onclick = () => { if (!del.dataset.armed) { del.dataset.armed = 1; del.textContent = "Toucher encore pour confirmer"; return; } saveDay(k, null); closeSheet(); toast("Journée supprimée"); };
+  }
+
+  // ---- suivi hebdo / mensuel ----
+  let track = { mode: "week", anchor: new Date() };
+  const MOIS = ["janvier", "février", "mars", "avril", "mai", "juin", "juillet", "août", "septembre", "octobre", "novembre", "décembre"];
+  const isoWeek = d => { const t = new Date(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate())); const day = t.getUTCDay() || 7; t.setUTCDate(t.getUTCDate() + 4 - day); const y0 = new Date(Date.UTC(t.getUTCFullYear(), 0, 1)); return Math.ceil(((t - y0) / 864e5 + 1) / 7); };
+  const addDays = (d, n) => { const x = new Date(d); x.setDate(x.getDate() + n); return x; };
+  const short = d => d.getDate() + " " + M[d.getMonth()];
+  function totals(keys, tk) {
+    let worked = 0, bal = 0, n = 0;
+    keys.forEach(k => { const r = state.days[k] && calc(state.days[k], k === tk); if (r && r.complete) { worked += r.net; bal += r.balance; n++; } });
+    return { worked, bal, n };
+  }
+  const balHtml = m => `<span class="r num ${m >= 0 ? "pos" : "neg"}">${signed(m)}</span>`;
+
+  function drawTrack() {
+    const now = new Date(), tk = dateKey(now), { mode, anchor } = track;
+    let title, sub, body, keys = [], isCurrent;
+    if (mode === "week") {
+      const mon = mondayOf(anchor);
+      isCurrent = dateKey(mon) === dateKey(mondayOf(now));
+      title = "Semaine " + isoWeek(mon); sub = short(mon) + " – " + short(addDays(mon, 6));
+      const rows = [];
+      for (let i = 0; i < 7; i++) {
+        const d = addDays(mon, i), k = dateKey(d), r = state.days[k];
+        if (i >= 5 && !r) continue;
+        keys.push(k);
+        const c = r && calc(r, k === tk), future = d > now && !r;
+        let right;
+        if (c && c.complete) right = balHtml(c.balance);
+        else if (c) right = `<span class="r" style="color:var(--muted)">${k === tk ? "en cours" : "incomplet"}</span>`;
+        else right = `<span class="r" style="color:var(--faint)">—</span>`;
+        const shown = c ? (c.complete ? c.net : c.raw) : 0;
+        const pct = c ? Math.min(100, shown / state.settings.daily * 100) : 0;
+        const detail = r ? `${clock(c.first)} → ${c.complete ? clock(c.last) : "…"} · ${hm(shown)}` : (future ? "à venir" : "pas de pointage");
+        rows.push(`<button class="item${future ? " future" : ""}" data-day="${k}"><span>${J[d.getDay()]} ${d.getDate()}<small class="num">${detail}</small>${r ? `<span class="mini"><i class="${pct >= 100 ? "full" : ""}" style="width:${pct.toFixed(0)}%"></i></span>` : ""}</span>${right}</button>`);
+      }
+      body = `<div class="list">${rows.join("")}</div>`;
+    } else {
+      const y = anchor.getFullYear(), m = anchor.getMonth(), first = new Date(y, m, 1), lastD = new Date(y, m + 1, 0);
+      isCurrent = y === now.getFullYear() && m === now.getMonth();
+      title = MOIS[m].charAt(0).toUpperCase() + MOIS[m].slice(1) + " " + y;
+      for (let d = 1; d <= lastD.getDate(); d++) { const k = dateKey(new Date(y, m, d)); if (state.days[k]) keys.push(k); }
+      const weeks = []; let mon = mondayOf(first);
+      while (mon <= lastD && mon <= now) {
+        const wk = keys.filter(k => { const d = parseKey(k); return d >= mon && d < addDays(mon, 7); });
+        const t = totals(wk, tk);
+        const a = mon < first ? first : mon, b = addDays(mon, 6) > lastD ? lastD : addDays(mon, 6);
+        weeks.push(`<button class="item" data-week="${dateKey(mon)}"><span>Semaine ${isoWeek(mon)}<small>${short(a)} – ${short(b)} · ${t.n} jour${t.n > 1 ? "s" : ""}</small></span>${t.n ? balHtml(t.bal) : `<span class="r" style="color:var(--faint)">—</span>`}</button>`);
+        mon = addDays(mon, 7);
+      }
+      sub = keys.length + " jour" + (keys.length > 1 ? "s" : "") + " pointé" + (keys.length > 1 ? "s" : "");
+      body = weeks.length ? `<div class="list">${weeks.join("")}</div>` : `<p class="note" style="margin:0">Rien à afficher pour ce mois.</p>`;
+    }
+    const t = totals(keys, tk);
+    openSheet(`<div class="seg" role="tablist"><button data-mode="week" class="${mode === "week" ? "on" : ""}">Semaine</button><button data-mode="month" class="${mode === "month" ? "on" : ""}">Mois</button></div>
+      <div class="nav"><button id="tr-prev" aria-label="Précédent">‹</button><div>${title}<small>${sub}</small></div><button id="tr-next" aria-label="Suivant" ${isCurrent ? "disabled" : ""}>›</button></div>
+      <div class="sum"><div>Solde<b class="num ${t.n ? (t.bal >= 0 ? "pos" : "neg") : ""}">${t.n ? signed(t.bal) : "—"}</b></div><div>Travaillé<b class="num">${hm(t.worked)}</b></div><div>Prévu<b class="num">${hm(t.n * state.settings.daily)}</b></div></div>
+      ${body}
+      <button class="ghost" id="h-add">Ajouter une journée passée</button>`);
+    scrim.querySelectorAll("[data-mode]").forEach(b => b.onclick = () => { track.mode = b.dataset.mode; drawTrack(); });
+    scrim.querySelectorAll("[data-day]").forEach(b => b.onclick = () => openDay(b.dataset.day, !state.days[b.dataset.day]));
+    scrim.querySelectorAll("[data-week]").forEach(b => b.onclick = () => { track = { mode: "week", anchor: parseKey(b.dataset.week) }; drawTrack(); });
+    const step = dir => { const a = new Date(track.anchor); if (track.mode === "week") a.setDate(a.getDate() + 7 * dir); else { a.setDate(1); a.setMonth(a.getMonth() + dir); } track.anchor = a; drawTrack(); };
+    $("tr-prev").onclick = () => step(-1);
+    $("tr-next").onclick = () => step(1);
+    $("h-add").onclick = () => { const y = new Date(); y.setDate(y.getDate() - 1); openDay(dateKey(y), true); };
+  }
+
+  // ---- settings ----
+  function openSettings() {
+    const s = state.settings;
+    openSheet(`<h3>Réglages</h3>
+      <div class="list">
+        <label class="item"><span>Temps par jour</span><input type="time" id="st-daily" value="${clock(s.daily)}"></label>
+        <label class="item"><span>Pause minimum</span><input type="number" inputmode="numeric" min="0" max="180" id="st-pause" value="${s.pauseMin}" style="max-width:70px"></label>
+      </div>
+      <div class="list">
+        <label class="item"><span>Arrivée possible dès</span><input type="time" id="st-ws" value="${clock(s.winStart)}"></label>
+        <label class="item"><span>Compter seulement dès cette heure</span><input type="checkbox" class="toggle" id="st-clamp" ${s.clampStart ? "checked" : ""}></label>
+      </div>
+      <div class="list">
+        <label class="item"><span>Sortie au plus tôt<small>Vide = pas de limite</small></span><input type="time" id="st-minout" value="${s.minOut != null ? clock(s.minOut) : ""}"></label>
+      </div>
+      <button class="cta" id="st-save">Enregistrer</button>
+      <h3 style="margin-top:6px">Sauvegarde</h3>
+      <p class="note" style="margin:-8px 4px 0">Tes pointages sont enregistrés sur cet iPhone. Exporte une copie de temps en temps (dans Fichiers ou iCloud Drive).</p>
+      <div class="row"><button class="ghost" id="bk-exp">Exporter</button><label class="ghost" style="display:flex;align-items:center;justify-content:center;cursor:pointer">Importer<input type="file" id="bk-imp" accept="application/json,.json" hidden></label></div>
+      <p class="note" id="bk-msg" hidden></p>`);
+    const bkMsg = m => { const el = $("bk-msg"); el.textContent = m; el.hidden = false; };
+    $("bk-exp").onclick = async () => {
+      const name = "pointage-" + dateKey(new Date()) + ".json";
+      const blob = new Blob([JSON.stringify(state, null, 1)], { type: "application/json" });
+      try {
+        const file = new File([blob], name, { type: "application/json" });
+        if (navigator.canShare && navigator.canShare({ files: [file] })) { await navigator.share({ files: [file], title: name }); return; }
+      } catch (e) { if (e && e.name === "AbortError") return; }
+      const a = document.createElement("a"); a.href = URL.createObjectURL(blob); a.download = name; document.body.appendChild(a); a.click(); a.remove();
+      bkMsg("Fichier " + name + " exporté.");
+    };
+    $("bk-imp").onchange = e => {
+      const f = e.target.files && e.target.files[0]; if (!f) return;
+      const rd = new FileReader();
+      rd.onload = () => {
+        try {
+          const data = JSON.parse(rd.result);
+          if (!data || typeof data.days !== "object") throw 0;
+          let n = 0;
+          Object.keys(data.days).forEach(k => { if (/^\d{4}-\d{2}-\d{2}$/.test(k)) { const r = norm(data.days[k]); if (r.punches.length) { state.days[k] = r; n++; } } });
+          if (data.settings) state.settings = { ...DEFAULT_SETTINGS, ...data.settings };
+          lsWrite(); render(); closeSheet(); toast(n + " journées importées");
+        } catch (err) { bkMsg("Fichier non reconnu. Choisis un fichier exporté depuis Pointage."); }
+      };
+      rd.readAsText(f);
+    };
+    $("st-save").onclick = () => {
+      const pm = parseInt($("st-pause").value, 10);
+      state.settings = { ...s, daily: toMin($("st-daily").value) || 504, pauseMin: isNaN(pm) ? 30 : Math.max(0, pm), winStart: toMin($("st-ws").value) ?? 390, clampStart: $("st-clamp").checked, minOut: toMin($("st-minout").value) };
+      saveSettings(); closeSheet(); toast("Réglages enregistrés");
+    };
+  }
+
+  // ---- toast with optional undo ----
+  let tt;
+  function toast(m, undo) {
+    const t = $("toast"), u = $("toast-undo");
+    $("toast-msg").textContent = m;
+    u.hidden = !undo; t.classList.toggle("undo", !!undo);
+    u.onclick = undo ? () => { undo(); t.hidden = true; } : null;
+    t.hidden = false; clearTimeout(tt); tt = setTimeout(() => t.hidden = true, undo ? 5000 : 2000);
+  }
+
+  render();
+  setInterval(tick, 1000);
+  document.addEventListener("visibilitychange", () => { if (!document.hidden) render(); });
+  window.__calc = calc;
+  try { navigator.storage && navigator.storage.persist && navigator.storage.persist(); } catch (e) {}
+  if ("serviceWorker" in navigator) navigator.serviceWorker.register("sw.js").catch(() => {});
+})();
+</script>
+
+</body>
+</html>
