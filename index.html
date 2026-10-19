@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="fr">
+<html lang="fr" data-theme="light">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
@@ -7,30 +7,39 @@
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="Balancier.">
-<meta name="theme-color" content="#FFFFFF">
+<meta name="theme-color" content="#FFFFFF" id="meta-theme">
 <meta name="format-detection" content="telephone=no">
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
 <link rel="icon" type="image/png" href="favicon.png">
-<style>html{box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px);-webkit-text-size-adjust:100%}body{margin:0}img{max-width:100%}html,body{overscroll-behavior:none}</style>
 <title>Balancier.</title>
 <style>
-/* Layout: iOS-like single screen. Large title, departure time, projection card, today's punches, Entrée/Sortie in the thumb zone. Light, black on white with grey groups. Grey tone is user-selectable (Réglages). */
+/* Layout: iOS-like single screen. Large title + animated balance wheel, departure time, projection + transit card, today's punches, Entrée/Sortie in the thumb zone. Black on white with grey groups; dark mode mirrors it. Grey tone is user-selectable. */
 :root{
   --bg:#FFFFFF; --fg:#000000;
   --raised:#F2F2F7; --hair:#E5E5EA; --muted:#8E8E93; --faint:#C7C7CC;
   --accent:#000000; --on-accent:#FFFFFF;
-  --ok:#248A3D; --neg:#D70015;
+  --ok:#248A3D; --neg:#D70015; --warn:#B25000;
+  --scrim:rgba(0,0,0,.28);
   --f-body:-apple-system,BlinkMacSystemFont,"SF Pro Text","Helvetica Neue",Helvetica,Arial,sans-serif;
   --f-display:-apple-system,BlinkMacSystemFont,"SF Pro Display","Helvetica Neue",Helvetica,Arial,sans-serif;
   color-scheme:light;
 }
-html,body{height:100%;background:var(--bg);color:var(--fg)}
-body{font-family:var(--f-body);font-size:17px;line-height:1.35;letter-spacing:-.01em;-webkit-font-smoothing:antialiased;
+:root[data-theme="dark"]{
+  --bg:#000000; --fg:#FFFFFF;
+  --raised:#1C1C1E; --hair:#38383A; --muted:#8E8E93; --faint:#48484A;
+  --accent:#FFFFFF; --on-accent:#000000;
+  --ok:#30D158; --neg:#FF453A; --warn:#FF9F0A;
+  --scrim:rgba(0,0,0,.6);
+  color-scheme:dark;
+}
+html{box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px);-webkit-text-size-adjust:100%}
+html,body{height:100%;background:var(--bg);color:var(--fg);overscroll-behavior:none}
+body{margin:0;font-family:var(--f-body);font-size:17px;line-height:1.35;letter-spacing:-.01em;-webkit-font-smoothing:antialiased;
   padding-left:max(20px,env(safe-area-inset-left,0px));padding-right:max(20px,env(safe-area-inset-right,0px))}
 *{box-sizing:border-box}
 [hidden]{display:none!important}
-button,input{font:inherit;color:inherit;letter-spacing:inherit}
+button,input,select{font:inherit;color:inherit;letter-spacing:inherit}
 button{cursor:pointer;-webkit-tap-highlight-color:transparent}
 :focus-visible{outline:2px solid var(--accent);outline-offset:3px;border-radius:8px}
 .num{font-variant-numeric:tabular-nums}
@@ -38,34 +47,54 @@ button{cursor:pointer;-webkit-tap-highlight-color:transparent}
 
 .app{max-width:440px;min-height:100%;margin:0 auto;padding-block:14px 22px;display:flex;flex-direction:column}
 
-header{display:flex;flex-direction:column;gap:2px}
-.date{order:-1;color:var(--muted);font-size:13px;font-weight:600;text-transform:uppercase;letter-spacing:.02em}
+header{display:flex;align-items:flex-end;justify-content:space-between;gap:12px}
+.titles{display:flex;flex-direction:column;gap:2px;min-width:0}
+.date{color:var(--muted);font-size:13px;font-weight:600;text-transform:uppercase;letter-spacing:.02em}
 .logo{font-family:var(--f-display);font-size:34px;font-weight:700;letter-spacing:-.02em;line-height:1.1}
 .logo span{color:var(--muted)}
 
-.hero{margin-top:26px;display:flex;flex-direction:column}
+/* balance wheel */
+.wheel{width:46px;height:46px;flex:none;margin-bottom:4px}
+.wheel .rim{fill:none;stroke:var(--fg);stroke-width:5}
+.wheel .arm{stroke:var(--muted);stroke-width:2.5}
+.wheel .spring{fill:none;stroke:var(--fg);stroke-width:2;stroke-linecap:round}
+.wheel .hub{fill:var(--fg)}
+.wheel g.rot{transform-origin:50px 50px}
+.wheel.on g.rot{animation:swing 1.6s cubic-bezier(.45,0,.55,1) infinite alternate}
+.wheel.on .spring{animation:breathe 1.6s cubic-bezier(.45,0,.55,1) infinite alternate;transform-origin:50px 50px}
+@keyframes swing{from{transform:rotate(-135deg)}to{transform:rotate(135deg)}}
+@keyframes breathe{from{transform:rotate(-20deg) scale(.94)}to{transform:rotate(20deg) scale(1.04)}}
+
+.hero{margin-top:24px;display:flex;flex-direction:column}
 .kicker{color:var(--muted);font-size:15px;font-weight:500}
 .time{font-family:var(--f-display);font-size:clamp(64px,19vw,80px);font-weight:600;line-height:1;letter-spacing:-.035em;margin-top:2px}
+.time.word{font-size:clamp(44px,13vw,56px);letter-spacing:-.025em;padding-block:10px 6px}
 .time.pos{color:var(--ok)} .time.neg{color:var(--neg)}
 .bar{height:6px;background:var(--raised);border-radius:3px;overflow:hidden;margin-top:16px}
 .bar i{display:block;height:100%;background:var(--accent);border-radius:3px;width:0;transition:width .6s ease}
 .meta{display:flex;justify-content:space-between;gap:12px;margin-top:8px;font-size:15px;color:var(--muted)}
 .meta b{color:var(--fg);font-weight:600}
+.nudge{margin-top:12px;align-self:flex-start;background:var(--raised);border-radius:10px;padding:7px 12px;font-size:14px;font-weight:500}
+.nudge.warn{color:var(--warn)}
 
-.proj{margin-top:22px;background:var(--raised);border-radius:16px;padding:14px 16px;display:flex;flex-direction:column;gap:10px}
+.card{margin-top:16px;background:var(--raised);border-radius:16px;padding:14px 16px;display:flex;flex-direction:column;gap:10px}
+.proj{margin-top:22px}
 .proj-main{display:flex;justify-content:space-between;align-items:center;gap:12px}
 .proj-main span{color:var(--muted);font-size:15px;font-weight:500;display:flex;align-items:center;gap:6px;flex-wrap:wrap}
 .proj-main input{background:var(--bg);border:0;border-radius:8px;padding:4px 8px;color:var(--fg);font-size:16px;font-weight:600;font-variant-numeric:tabular-nums}
 .proj-main input:focus{outline:2px solid var(--accent)}
 .proj-main b{font-family:var(--f-display);font-size:26px;font-weight:700;letter-spacing:-.02em}
-.proj-rows{display:flex;flex-direction:column;gap:4px;border-top:1px solid var(--hair);padding-top:10px}
-.proj-row{display:flex;justify-content:space-between;font-size:15px;color:var(--muted)}
-.proj-row b{font-weight:600}
-.proj-warn{font-size:13px;color:var(--neg);margin:-4px 0 0}
+.rows{display:flex;flex-direction:column;gap:4px;border-top:1px solid var(--hair);padding-top:10px}
+.rowx{display:flex;justify-content:space-between;gap:10px;font-size:15px;color:var(--muted)}
+.rowx b{font-weight:600}
+.rowx .v{color:var(--fg)}
+.warnline{font-size:13px;color:var(--neg);margin:-4px 0 0}
+.card-title{font-size:13px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.02em}
 
 .today{margin-top:24px;display:flex;flex-direction:column;gap:10px}
-.today-head{display:flex;justify-content:space-between;align-items:baseline}
+.today-head{display:flex;justify-content:space-between;align-items:baseline;gap:10px}
 .today-head span{font-size:20px;font-weight:700;letter-spacing:-.02em}
+.today-head span small{font-size:13px;font-weight:600;color:var(--muted);margin-left:8px;letter-spacing:0}
 .today-head button{border:0;background:none;color:var(--muted);font-size:15px;font-weight:500;padding:4px 0}
 .punches{display:flex;flex-wrap:wrap;gap:8px}
 .p{background:var(--raised);border:0;border-radius:12px;padding:8px 12px;display:flex;flex-direction:column;align-items:flex-start;min-width:78px;text-align:left}
@@ -85,6 +114,8 @@ header{display:flex;flex-direction:column;gap:2px}
 .pb.on{background:var(--accent);color:var(--on-accent)}
 .pb:not(.on){cursor:default}
 .pb.on:active{transform:scale(.97);opacity:.85}
+.pb.pop{animation:pop .35s ease}
+@keyframes pop{40%{transform:scale(1.04)}}
 
 .week{display:flex;justify-content:center;gap:18px;font-size:14px;color:var(--muted);min-height:18px}
 .week b{font-weight:600}
@@ -92,62 +123,97 @@ header{display:flex;flex-direction:column;gap:2px}
 .links button{border:0;background:none;color:var(--fg);font-size:15px;font-weight:500;padding:8px 2px}
 
 /* sheets: grey sheet, white grouped lists (iOS inset grouped) */
-.scrim{position:fixed;inset:0;background:rgba(0,0,0,.28);z-index:20;display:flex;align-items:flex-end;justify-content:center}
+.scrim{position:fixed;inset:0;background:var(--scrim);z-index:20;display:flex;align-items:flex-end;justify-content:center}
 .sheet{background:var(--raised);width:100%;max-width:500px;max-height:90%;overflow:auto;border-radius:14px 14px 0 0;
   padding:8px max(16px,env(safe-area-inset-left,0px)) calc(22px + env(safe-area-inset-bottom,0px)) max(16px,env(safe-area-inset-right,0px));display:flex;flex-direction:column;gap:16px}
+:root[data-theme="dark"] .sheet{background:#0F0F10}
+.sheet > *{flex-shrink:0}
 .grab{width:36px;height:5px;border-radius:3px;background:var(--faint);align-self:center}
 .sheet h3{margin:4px 4px 0;font-size:22px;font-weight:700;letter-spacing:-.02em}
+.sheet h4{margin:4px 16px -8px;font-size:13px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.02em}
 .list{display:flex;flex-direction:column;border-radius:12px;overflow:hidden;background:var(--bg)}
+:root[data-theme="dark"] .list{background:var(--raised)}
 .item{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:12px 16px;border:0;background:none;text-align:left;width:100%;min-height:48px}
 .item + .item{border-top:.5px solid var(--hair)}
 .item small{display:block;color:var(--muted);font-size:13px;margin-top:1px}
-.item input{background:none;border:0;text-align:right;color:var(--muted);font-size:17px;min-width:0;width:auto;max-width:150px}
-.item input:focus{outline:none;color:var(--fg)}
-.item .r{font-weight:600}
+.item input,.item select{background:none;border:0;text-align:right;color:var(--muted);font-size:17px;min-width:0;width:auto;max-width:170px}
+.item input[type="text"]{text-align:right;width:100%}
+.item input:focus,.item select:focus{outline:none;color:var(--fg)}
+.item .r{font-weight:600;white-space:nowrap}
 .item .grow{flex:1}
+.item .tag{font-size:12px;font-weight:600;color:var(--muted);background:var(--raised);border-radius:6px;padding:2px 6px;margin-left:6px}
 .x{border:0;background:var(--raised);color:var(--muted);width:28px;height:28px;border-radius:14px;font-size:16px;line-height:1;flex:none}
 .note{color:var(--muted);font-size:13px;margin:-8px 16px 0}
 .err{color:var(--neg);font-size:14px;margin:0 4px}
 .row{display:flex;gap:10px}
 .row .ghost,.row .cta{flex:1}
 .cta{border:0;border-radius:14px;background:var(--accent);color:var(--on-accent);font-weight:600;font-size:17px;height:50px;width:100%}
-.ghost{border:0;border-radius:14px;background:var(--bg);color:var(--fg);font-weight:600;font-size:17px;height:50px}
+.ghost{border:0;border-radius:14px;background:var(--bg);color:var(--fg);font-weight:600;font-size:17px;height:50px;display:flex;align-items:center;justify-content:center;cursor:pointer}
+:root[data-theme="dark"] .ghost{background:var(--raised)}
 .addp{border:0;background:none;color:var(--fg);font-weight:600;font-size:16px;text-align:left;padding:2px 16px}
 .danger{border:0;background:none;color:var(--neg);font-weight:500;font-size:16px;height:44px}
 .toggle{accent-color:var(--accent);width:20px;height:20px}
-.seg{display:grid;grid-template-columns:1fr 1fr;background:var(--hair);border-radius:9px;padding:2px}
-.seg button{border:0;background:none;color:var(--fg);font-weight:500;font-size:14px;height:30px;border-radius:7px}
+.seg{display:grid;grid-auto-flow:column;grid-auto-columns:1fr;background:var(--hair);border-radius:9px;padding:2px}
+.seg button{border:0;background:none;color:var(--fg);font-weight:500;font-size:14px;height:30px;border-radius:7px;padding:0 4px}
 .seg button.on{background:var(--bg);font-weight:600;box-shadow:0 1px 3px rgba(0,0,0,.12)}
+:root[data-theme="dark"] .seg button.on{background:#636366}
+.chips{display:flex;flex-wrap:wrap;gap:8px;padding:12px 16px}
+.chip{border:0;background:var(--hair);color:var(--fg);border-radius:16px;padding:7px 13px;font-size:15px;font-weight:500}
+.chip.on{background:var(--accent);color:var(--on-accent)}
 .nav{display:flex;align-items:center;justify-content:space-between;gap:8px}
 .nav button{border:0;background:none;color:var(--fg);font-size:26px;width:40px;height:40px;border-radius:20px;line-height:1}
 .nav button[disabled]{color:var(--faint);cursor:default}
 .nav div{text-align:center;font-weight:700;font-size:18px}
 .nav small{display:block;color:var(--muted);font-weight:500;font-size:13px}
 .sum{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;padding:0 4px}
-.sum div{display:flex;flex-direction:column;gap:2px;color:var(--muted);font-size:13px}
-.sum b{color:var(--fg);font-size:24px;font-weight:700;letter-spacing:-.02em}
+.sum div{display:flex;flex-direction:column;gap:2px;color:var(--muted);font-size:13px;min-width:0}
+.sum b{color:var(--fg);font-size:22px;font-weight:700;letter-spacing:-.02em}
+.sum.small b{font-size:18px}
 .item.future{color:var(--faint)}
+.item.off{color:var(--muted)}
 .mini{display:block;height:3px;background:var(--raised);border-radius:2px;margin-top:7px;width:120px;overflow:hidden}
 .mini i{display:block;height:100%;background:var(--fg)}
 .mini i.full{background:var(--ok)}
+.spark{display:block;width:100%;height:auto}
+.spark .zero{stroke:var(--hair);stroke-width:1}
+.spark .line{fill:none;stroke:var(--fg);stroke-width:2;stroke-linejoin:round;stroke-linecap:round}
+.spark .area{fill:var(--fg);opacity:.06}
+.spark .dot{fill:var(--fg)}
+.spark text{font-size:10px;fill:var(--muted);font-family:var(--f-body)}
+.sparkwrap{background:var(--bg);border-radius:12px;padding:10px 12px 6px}
+:root[data-theme="dark"] .sparkwrap{background:var(--raised)}
 .tones{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;padding:12px 16px}
 .tone{border:0;background:none;display:flex;flex-direction:column;align-items:center;gap:6px;font-size:12px;color:var(--muted);padding:0}
-.tone i{display:block;width:44px;height:44px;border-radius:22px;border:2px solid transparent;box-shadow:inset 0 0 0 1px rgba(0,0,0,.08)}
+.tone i{display:block;width:44px;height:44px;border-radius:22px;border:2px solid transparent;box-shadow:inset 0 0 0 1px rgba(128,128,128,.25)}
 .tone.on{color:var(--fg);font-weight:600}
 .tone.on i{border-color:var(--fg)}
+.transit{display:flex;flex-direction:column;gap:6px}
+.dep{display:flex;justify-content:space-between;gap:10px;font-size:15px}
+.dep b{font-weight:600}
+.dep span{color:var(--muted)}
 .toast{position:fixed;left:50%;top:calc(12px + env(safe-area-inset-top,0px));transform:translateX(-50%);background:var(--fg);color:var(--bg);font-size:14px;font-weight:500;padding:6px 6px 6px 16px;min-height:40px;border-radius:20px;z-index:30;white-space:nowrap;display:flex;align-items:center;gap:12px;box-shadow:0 8px 28px rgba(0,0,0,.18)}
-.toast button{border:0;background:rgba(255,255,255,.18);color:var(--bg);font-weight:600;font-size:14px;border-radius:14px;padding:6px 12px}
+.toast button{border:0;background:rgba(128,128,128,.28);color:var(--bg);font-weight:600;font-size:14px;border-radius:14px;padding:6px 12px}
 .toast:not(.undo){padding-right:16px}
-@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+@media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
 </style>
 </head>
 <body>
-
-
 <div class="app">
   <header>
-    <div class="logo">Balancier<span>.</span></div>
-    <div class="date" id="date"></div>
+    <div class="titles">
+      <div class="date" id="date"></div>
+      <div class="logo">Balancier<span>.</span></div>
+    </div>
+    <svg class="wheel" id="wheel" viewBox="0 0 100 100" aria-hidden="true">
+      <g class="rot">
+        <circle class="rim" cx="50" cy="50" r="44"/>
+        <line class="arm" x1="50" y1="50" x2="50" y2="8"/>
+        <line class="arm" x1="50" y1="50" x2="86.4" y2="71"/>
+        <line class="arm" x1="50" y1="50" x2="13.6" y2="71"/>
+      </g>
+      <path class="spring" d="M50 50 m0 -4 a4 4 0 1 1 -0.1 0 M50 50 m0 -9 a9 9 0 1 1 -0.1 0 M50 50 m0 -15 a15 15 0 1 1 -0.1 0 M50 50 m0 -21 a21 21 0 1 1 -12 3.5" />
+      <circle class="hub" cx="50" cy="50" r="5"/>
+    </svg>
   </header>
 
   <section class="hero" aria-live="polite">
@@ -155,19 +221,25 @@ header{display:flex;flex-direction:column;gap:2px}
     <div class="time num" id="time">--:--</div>
     <div class="bar" aria-hidden="true"><i id="fill"></i></div>
     <div class="meta"><span id="meta-l"></span><span id="meta-r"></span></div>
+    <div class="nudge" id="nudge" hidden></div>
   </section>
 
-  <section class="proj" id="proj" hidden aria-live="polite">
-    <div class="proj-main"><span id="proj-label">Si tu sors à <input type="time" id="proj-out" aria-label="Heure de sortie prévue"></span><b class="num" id="proj-bal"></b></div>
-    <p class="proj-warn" id="proj-warn" hidden></p>
-    <div class="proj-rows">
-      <div class="proj-row"><span>Semaine</span><span class="num" id="proj-wk"></span></div>
-      <div class="proj-row"><span>Compteur</span><span class="num" id="proj-tot"></span></div>
+  <section class="card proj" id="proj" hidden aria-live="polite">
+    <div class="proj-main"><span id="proj-label"><span id="proj-txt">À ta sortie,</span> <input type="time" id="proj-out" aria-label="Heure de sortie prévue"></span><b class="num" id="proj-bal"></b></div>
+    <p class="warnline" id="proj-warn" hidden></p>
+    <div class="rows">
+      <div class="rowx"><span>Semaine</span><span class="num" id="proj-wk"></span></div>
+      <div class="rowx"><span>Compteur</span><span class="num" id="proj-tot"></span></div>
     </div>
   </section>
 
+  <section class="card" id="transit" hidden>
+    <div class="card-title" id="transit-title">Retour</div>
+    <div class="transit" id="transit-list"></div>
+  </section>
+
   <section class="today">
-    <div class="today-head"><span>Pointages du jour</span><button id="btn-edit">Modifier</button></div>
+    <div class="today-head"><span>Aujourd'hui<small id="day-tag"></small></span><button id="btn-edit">Modifier</button></div>
     <div class="punches" id="punches"></div>
   </section>
 
@@ -175,7 +247,7 @@ header{display:flex;flex-direction:column;gap:2px}
     <div class="live">Heure de l'iPhone <b class="num" id="clock">--:--:--</b></div>
     <div class="punch">
       <button class="pb" id="btn-in"><span>Entrée</span><small class="num" id="in-t"></small></button>
-      <button class="pb out" id="btn-out"><span>Sortie</span><small class="num" id="out-t"></small></button>
+      <button class="pb" id="btn-out"><span>Sortie</span><small class="num" id="out-t"></small></button>
     </div>
     <div class="week" id="week"></div>
     <div class="links">
@@ -191,11 +263,17 @@ header{display:flex;flex-direction:column;gap:2px}
 <script>
 (() => {
   const LS_KEY = "pointage.v1";
-  const DEFAULT_SETTINGS = { daily: 504, pauseMin: 30, winStart: 390, winEnd: 540, clampStart: false, minOut: 945, tone: "ios" };
-  let state = { settings: { ...DEFAULT_SETTINGS }, days: {} };
-  let col = null, synced = false;
+  const DEFAULT_SETTINGS = {
+    sched: [0, 504, 504, 504, 504, 504, 0],   // index = getDay() (0 = dimanche)
+    pauseMin: 30, winStart: 390, clampStart: false, minOut: 945,
+    tone: "ios", theme: "auto", holidays: "GE",
+    vacDays: 25, maxWeek: 2700, remoteCap: 0,
+    transit: { from: "", to: "", walk: 10 }
+  };
+  let state = { settings: structuredCloneSafe(DEFAULT_SETTINGS), days: {} };
+  function structuredCloneSafe(o) { return JSON.parse(JSON.stringify(o)); }
 
-  // ---- helpers ----
+  // ---------- helpers ----------
   const pad = n => String(n).padStart(2, "0");
   const toMin = s => { if (!s) return null; const [h, m] = s.split(":").map(Number); return h * 60 + m; };
   const clock = m => { m = ((Math.round(m) % 1440) + 1440) % 1440; return pad(Math.floor(m / 60)) + ":" + pad(m % 60); };
@@ -204,40 +282,91 @@ header{display:flex;flex-direction:column;gap:2px}
   const dateKey = d => d.getFullYear() + "-" + pad(d.getMonth() + 1) + "-" + pad(d.getDate());
   const nowMin = () => { const d = new Date(); return d.getHours() * 60 + d.getMinutes(); };
   const parseKey = k => { const [y, mo, d] = k.split("-").map(Number); return new Date(y, mo - 1, d); };
+  const addDays = (d, n) => { const x = new Date(d); x.setDate(x.getDate() + n); return x; };
   const J = ["dim.", "lun.", "mar.", "mer.", "jeu.", "ven.", "sam."];
-  const M = ["janv.", "févr.", "mars", "avr.", "mai", "juin", "juil.", "août", "sept.", "oct.", "nov.", "déc."];
   const JL = ["dimanche", "lundi", "mardi", "mercredi", "jeudi", "vendredi", "samedi"];
-  const MOISL = ["janvier", "février", "mars", "avril", "mai", "juin", "juillet", "août", "septembre", "octobre", "novembre", "décembre"];
+  const M = ["janv.", "févr.", "mars", "avr.", "mai", "juin", "juil.", "août", "sept.", "oct.", "nov.", "déc."];
+  const MOIS = ["janvier", "février", "mars", "avril", "mai", "juin", "juillet", "août", "septembre", "octobre", "novembre", "décembre"];
   const longDate = d => J[d.getDay()] + " " + d.getDate() + " " + M[d.getMonth()];
+  const short = d => d.getDate() + " " + M[d.getMonth()];
   const mondayOf = d => { const x = new Date(d); x.setDate(x.getDate() - (x.getDay() + 6) % 7); x.setHours(0, 0, 0, 0); return x; };
+  const isoWeek = d => { const t = new Date(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate())); const day = t.getUTCDay() || 7; t.setUTCDate(t.getUTCDate() + 4 - day); const y0 = new Date(Date.UTC(t.getUTCFullYear(), 0, 1)); return Math.ceil(((t - y0) / 864e5 + 1) / 7); };
   const sortTimes = a => a.filter(Boolean).sort((x, y) => toMin(x) - toMin(y));
-  // accepts the new {punches:[…]} shape and the older {in,bs,be,out} shape
-  const norm = v => ({ punches: sortTimes(Array.isArray(v && v.punches) ? v.punches : [v && v.in, v && v.bs, v && v.be, v && v.out]) });
+  const esc = s => String(s).replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+
+  const TYPES = { work: "Travail", conge: "Congé", maladie: "Maladie", recup: "Récupération", ferie: "Férié" };
+  // accepts {punches:[…], type, half, remote} and the older {in,bs,be,out}
+  const norm = v => ({
+    punches: sortTimes(Array.isArray(v && v.punches) ? v.punches : [v && v.in, v && v.bs, v && v.be, v && v.out]),
+    type: (v && TYPES[v.type]) ? v.type : "work",
+    half: !!(v && v.half), remote: !!(v && v.remote)
+  });
+  const meaningful = r => r.punches.length || r.type !== "work" || r.remote;
+
+  function migrateSettings(s) {
+    const out = { ...structuredCloneSafe(DEFAULT_SETTINGS), ...(s || {}) };
+    if (!Array.isArray(out.sched) || out.sched.length !== 7) { const d = (s && s.daily) || 504; out.sched = [0, d, d, d, d, d, 0]; }
+    out.transit = { ...DEFAULT_SETTINGS.transit, ...((s && s.transit) || {}) };
+    delete out.daily; delete out.winEnd;
+    return out;
+  }
 
   try {
     const c = JSON.parse(localStorage.getItem(LS_KEY) || "null");
-    if (c && c.days) { const days = {}; Object.keys(c.days).forEach(k => { const r = norm(c.days[k]); if (r.punches.length) days[k] = r; }); state = { settings: { ...DEFAULT_SETTINGS, ...(c.settings || {}) }, days }; }
+    if (c && c.days) {
+      const days = {};
+      Object.keys(c.days).forEach(k => { const r = norm(c.days[k]); if (meaningful(r)) days[k] = r; });
+      state = { settings: migrateSettings(c.settings), days };
+    }
   } catch (e) {}
   const lsWrite = () => { try { localStorage.setItem(LS_KEY, JSON.stringify(state)); } catch (e) {} };
 
-
-  // ---- grey tones ----
-  const TONES = {
-    ios:      { name: "iOS",      raised: "#F2F2F7", hair: "#E5E5EA", muted: "#8E8E93", faint: "#C7C7CC" },
-    neutre:   { name: "Neutre",   raised: "#F2F2F2", hair: "#E6E6E6", muted: "#8A8A8A", faint: "#C4C4C4" },
-    chaud:    { name: "Chaud",    raised: "#F4F2EF", hair: "#E8E5E1", muted: "#8C8781", faint: "#C9C4BE" },
-    graphite: { name: "Graphite", raised: "#EBEBED", hair: "#D8D8DC", muted: "#636366", faint: "#AEAEB2" }
-  };
-  function applyTone(key) {
-    const t = TONES[key] || TONES.ios, r = document.documentElement.style;
-    r.setProperty("--raised", t.raised); r.setProperty("--hair", t.hair); r.setProperty("--muted", t.muted); r.setProperty("--faint", t.faint);
+  // ---------- jours fériés (Genève) ----------
+  const holCache = {};
+  function easter(y) {
+    const a = y % 19, b = Math.floor(y / 100), c = y % 100, d = Math.floor(b / 4), e = b % 4, f = Math.floor((b + 8) / 25),
+      g = Math.floor((b - f + 1) / 3), h = (19 * a + b - d - g + 15) % 30, i = Math.floor(c / 4), k = c % 4,
+      l = (32 + 2 * e + 2 * i - h - k) % 7, m = Math.floor((a + 11 * h + 22 * l) / 451),
+      month = Math.floor((h + l - 7 * m + 114) / 31), day = ((h + l - 7 * m + 114) % 31) + 1;
+    return new Date(y, month - 1, day);
   }
+  function holidaysGE(y) {
+    if (holCache[y]) return holCache[y];
+    const E = easter(y), H = {};
+    const add = (d, n) => { H[dateKey(d)] = n; };
+    add(new Date(y, 0, 1), "Nouvel An");
+    add(addDays(E, -2), "Vendredi saint");
+    add(addDays(E, 1), "Lundi de Pâques");
+    add(addDays(E, 39), "Ascension");
+    add(addDays(E, 50), "Lundi de Pentecôte");
+    add(new Date(y, 7, 1), "Fête nationale");
+    const s1 = new Date(y, 8, 1); while (s1.getDay() !== 0) s1.setDate(s1.getDate() + 1);
+    add(addDays(s1, 4), "Jeûne genevois");
+    add(new Date(y, 11, 25), "Noël");
+    add(new Date(y, 11, 31), "Restauration de la République");
+    return (holCache[y] = H);
+  }
+  const holidayName = k => state.settings.holidays === "GE" ? holidaysGE(+k.slice(0, 4))[k] || null : null;
 
-  // ---- core calc: alternating Entrée / Sortie ----
-  function calc(rec, isToday) {
+  // ---------- core calc ----------
+  function baseFor(k) { return state.settings.sched[parseKey(k).getDay()] || 0; }
+  function targetFor(k, rec) {
+    const base = baseFor(k);
+    const type = rec ? rec.type : "work";
+    if (type === "ferie" || (holidayName(k) && type === "work")) return 0;
+    if (type === "conge" || type === "maladie") return rec.half ? Math.round(base / 2) : 0;
+    return base;
+  }
+  // alternating Entrée / Sortie
+  function calc(rec, isToday, k) {
     const s = state.settings, n = nowMin();
-    const p = (rec && rec.punches || []).map(toMin);
-    if (!p.length) return null;
+    if (!rec) return null;
+    const t = targetFor(k, rec);
+    const p = (rec.punches || []).map(toMin);
+    if (!p.length) {
+      if (rec.type === "work") return null;
+      return { inside: false, raw: 0, gaps: 0, pauseDue: 0, net: 0, remaining: t, daily: t, first: null, last: null, target: null, complete: true, balance: -t, absence: true };
+    }
     if (s.clampStart) p[0] = Math.max(p[0], s.winStart);
     let raw = 0, gaps = 0;
     for (let i = 0; i < p.length; i += 2) {
@@ -246,125 +375,208 @@ header{display:flex;flex-direction:column;gap:2px}
       if (i > 0) gaps += Math.max(0, p[i] - p[i - 1]);
     }
     const inside = p.length % 2 === 1;
-    const pauseDue = Math.max(0, s.pauseMin - gaps);
+    const needsPause = t > 330 || raw > 330;
+    const pauseDue = needsPause ? Math.max(0, s.pauseMin - gaps) : 0;
     const net = Math.max(0, raw - pauseDue);
-    const remaining = s.daily + pauseDue - raw;
+    const remaining = t + (t > 330 ? Math.max(0, s.pauseMin - gaps) : pauseDue) - raw;
     return {
-      inside, raw, gaps, pauseDue, net, remaining,
+      inside, raw, gaps, pauseDue, net, remaining, daily: t,
       first: p[0], last: p[p.length - 1],
       target: inside && isToday ? n + remaining : null,
-      complete: !inside, balance: !inside ? net - s.daily : null
+      complete: !inside, balance: !inside ? net - t : null
     };
   }
+  const calcK = (k, tk) => calc(state.days[k], k === tk, k);
 
-  // ---- persistence ----
-  const docId = k => "d" + k.replace(/-/g, "");
+  function totalsOf(keys, tk) {
+    let worked = 0, bal = 0, n = 0, target = 0;
+    keys.forEach(k => { const r = calcK(k, tk); if (r && r.complete) { worked += r.net; bal += r.balance; target += r.daily; n++; } });
+    return { worked, bal, n, target };
+  }
+  function weekKeys(mon) { const a = []; for (let i = 0; i < 7; i++) a.push(dateKey(addDays(mon, i))); return a; }
+
+  // ---------- persistence ----------
   function saveDay(k, rec) {
-    if (rec && rec.punches.length) state.days[k] = rec; else { delete state.days[k]; rec = null; }
-    lsWrite();
-    if (col) { const ref = col.doc(docId(k)); (rec ? ref.set({ kind: "day", date: k, punches: rec.punches }) : ref.delete()).catch(() => toast("Hors connexion, gardé sur le téléphone")); }
-    render();
+    if (rec && meaningful(rec)) state.days[k] = rec; else delete state.days[k];
+    lsWrite(); render();
   }
-  function saveSettings() { lsWrite(); if (col) col.doc("settings").set({ kind: "settings", ...state.settings }).catch(() => {}); render(); }
+  function saveSettings() { lsWrite(); render(); }
 
-  async function connect() {
-    if (!window.claude || !window.claude.use) return;
-    try {
-      const [db, u] = await Promise.all([window.claude.use("db"), window.claude.use("user")]);
-      if (!db || !u) return;
-      const uid = await u.id(); if (!uid) return;
-      col = db.collection("data/users/" + uid);
-      let first = true;
-      col.onSnapshot(snap => {
-        const days = {}; let settings = null;
-        snap.docs.forEach(doc => { const v = doc.data(); if (!v) return;
-          if (v.kind === "settings") settings = v;
-          else if (v.kind === "day" && v.date) { const r = norm(v); if (r.punches.length) days[v.date] = r; } });
-        if (first) {
-          first = false;
-          Object.keys(state.days).forEach(k => { if (!days[k]) { days[k] = state.days[k]; col.doc(docId(k)).set({ kind: "day", date: k, punches: state.days[k].punches }).catch(() => {}); } });
-          if (!settings) col.doc("settings").set({ kind: "settings", ...state.settings }).catch(() => {});
-        }
-        state.days = days;
-        if (settings) { const { kind, ...rest } = settings; state.settings = { ...DEFAULT_SETTINGS, ...rest }; }
-        synced = true; lsWrite(); render();
-      }, () => { synced = false; });
-    } catch (e) {}
+  // ---------- theme ----------
+  const TONES = {
+    ios:      { name: "iOS",      light: ["#F2F2F7", "#E5E5EA", "#8E8E93", "#C7C7CC"], dark: ["#1C1C1E", "#38383A", "#8E8E93", "#48484A"] },
+    neutre:   { name: "Neutre",   light: ["#F2F2F2", "#E6E6E6", "#8A8A8A", "#C4C4C4"], dark: ["#1C1C1C", "#383838", "#8A8A8A", "#4A4A4A"] },
+    chaud:    { name: "Chaud",    light: ["#F4F2EF", "#E8E5E1", "#8C8781", "#C9C4BE"], dark: ["#1E1C1A", "#3A3734", "#928C85", "#4C4843"] },
+    graphite: { name: "Graphite", light: ["#EBEBED", "#D8D8DC", "#636366", "#AEAEB2"], dark: ["#2C2C2E", "#48484A", "#AEAEB2", "#5A5A5E"] }
+  };
+  const mq = window.matchMedia ? matchMedia("(prefers-color-scheme: dark)") : null;
+  function applyTheme() {
+    const s = state.settings;
+    const mode = s.theme === "auto" ? (mq && mq.matches ? "dark" : "light") : s.theme;
+    const root = document.documentElement;
+    if (root.dataset.theme !== mode) root.dataset.theme = mode;
+    const t = (TONES[s.tone] || TONES.ios)[mode];
+    ["--raised", "--hair", "--muted", "--faint"].forEach((v, i) => root.style.setProperty(v, t[i]));
+    const mt = document.getElementById("meta-theme"); if (mt) mt.content = mode === "dark" ? "#000000" : "#FFFFFF";
   }
+  if (mq && mq.addEventListener) mq.addEventListener("change", () => render());
 
-  // ---- render ----
+  // ---------- render ----------
   const $ = id => document.getElementById(id);
+  let projOut = null, projDay = null;
   function render() {
+    applyTheme();
     const now = new Date(), tk = dateKey(now), n = nowMin(), s = state.settings;
-    const rec = state.days[tk] || { punches: [] };
-    const c = calc(rec, true);
-    applyTone(s.tone);
-    $("date").textContent = JL[now.getDay()] + " " + now.getDate() + " " + MOISL[now.getMonth()];
+    const rec = state.days[tk] || null;
+    const c = calc(rec, true, tk);
+    const hol = holidayName(tk);
+    const t0 = targetFor(tk, rec || { type: "work" });
+    $("date").textContent = JL[now.getDay()] + " " + now.getDate() + " " + MOIS[now.getMonth()];
+    $("wheel").classList.toggle("on", !!(c && c.inside));
+
+    // totals (complete days), week of today
+    const mon = mondayOf(now); let wk = 0, tot = 0, any = false, wkNet = 0;
+    Object.keys(state.days).forEach(k => {
+      const r = calcK(k, tk); if (!r || !r.complete) return;
+      any = true; tot += r.balance;
+      if (parseKey(k) >= mon && parseKey(k) < addDays(mon, 7)) { wk += r.balance; wkNet += r.net; }
+    });
 
     const time = $("time"); time.className = "time num";
+    const nudge = $("nudge"); nudge.hidden = true; nudge.className = "nudge";
+    const setNudge = (txt, warn) => { nudge.textContent = txt; nudge.hidden = false; if (warn) nudge.classList.add("warn"); };
+
     if (!c) {
-      $("kicker").textContent = "Départ si tu entres maintenant";
-      time.textContent = clock(Math.max(n + s.daily + s.pauseMin, s.minOut ?? 0));
+      if (t0 === 0) {
+        $("kicker").textContent = hol ? "Jour férié" : "Pas de travail prévu";
+        time.textContent = hol || "Repos"; time.classList.add("word");
+        $("fill").style.width = "0%";
+        $("meta-l").textContent = "Si tu pointes, tout compte en plus."; $("meta-r").textContent = "";
+      } else {
+        const pause = t0 > 330 ? s.pauseMin : 0;
+        $("kicker").textContent = "Départ si tu entres maintenant";
+        time.textContent = clock(Math.max(n + t0 + pause, s.minOut ?? 0));
+        $("fill").style.width = "0%";
+        $("meta-l").innerHTML = `${hm(t0)}${pause ? ` + ${pause} min de pause` : ""}`; $("meta-r").textContent = "";
+        if (n < s.winStart) setNudge(`Plage d'arrivée dès ${clock(s.winStart)}`);
+      }
+    } else if (c.absence) {
+      $("kicker").textContent = rec.half ? "Demi-journée" : "Aujourd'hui";
+      time.textContent = TYPES[rec.type] + (rec.half ? " ½" : ""); time.classList.add("word");
       $("fill").style.width = "0%";
-      $("meta-l").innerHTML = `${hm(s.daily)} + ${s.pauseMin} min de pause`; $("meta-r").textContent = "";
+      $("meta-l").innerHTML = rec.type === "recup" ? `<b>${signed(c.balance)}</b> sur ton compteur` : (rec.half ? `Reste <b>${hm(c.daily)}</b> à pointer` : "Journée sans pointage");
+      $("meta-r").textContent = "";
     } else if (c.inside) {
-      const blocked = s.minOut != null && s.minOut > c.target;
+      const blocked = s.minOut != null && s.minOut > c.target && c.daily > 330;
       const leave = blocked ? s.minOut : c.target;
       $("kicker").textContent = blocked ? `Départ · pas avant ${clock(s.minOut)}` : "Départ";
       time.textContent = clock(leave);
-      $("fill").style.width = Math.min(100, c.raw / (c.raw + Math.max(0, c.remaining)) * 100).toFixed(1) + "%";
+      $("fill").style.width = Math.min(100, c.raw / Math.max(1, c.raw + Math.max(0, c.remaining)) * 100).toFixed(1) + "%";
       $("meta-l").innerHTML = `<b>${hm(c.raw)}</b> de présence`;
-      if (blocked) $("meta-r").innerHTML = c.remaining > 0 ? `${hm(s.daily)} atteintes à <b>${clock(c.target)}</b>` : `<b class="pos">${signed(-c.remaining)}</b> · encore <b>${hm(s.minOut - n)}</b>`;
+      if (blocked) $("meta-r").innerHTML = c.remaining > 0 ? `${hm(c.daily)} atteintes à <b>${clock(c.target)}</b>` : `<b class="pos">${signed(-c.remaining)}</b> · encore <b>${hm(s.minOut - n)}</b>`;
+      else if (c.remaining > 0 && c.remaining <= 30) $("meta-r").innerHTML = `plus que <b>${c.remaining} min</b>`;
       else $("meta-r").innerHTML = c.remaining > 0 ? `encore <b>${hm(c.remaining)}</b>` : `<b class="pos">${signed(-c.remaining)}</b>`;
+      if (c.gaps === 0 && c.raw >= 330 && c.daily > 330) setNudge("Plus de 5h30 sans pause : pense à souffler.", true);
+      else if (c.remaining <= 0 && !blocked) setNudge("Tes heures sont faites. Bonne fin de journée !");
     } else {
       $("kicker").textContent = `Sorti à ${clock(c.last)} · solde du jour`;
       time.textContent = signed(c.balance); time.classList.add(c.balance >= 0 ? "pos" : "neg");
-      $("fill").style.width = Math.min(100, c.net / s.daily * 100).toFixed(1) + "%";
+      $("fill").style.width = Math.min(100, c.daily ? c.net / c.daily * 100 : 100).toFixed(1) + "%";
       $("meta-l").innerHTML = `<b>${hm(c.net)}</b> comptées`;
-      $("meta-r").textContent = c.pauseDue > 0 ? `pause ${s.pauseMin} min déduite` : `pause ${hm(c.gaps)}`;
+      $("meta-r").textContent = c.pauseDue > 0 ? `pause ${s.pauseMin} min déduite` : (c.gaps ? `pause ${hm(c.gaps)}` : "");
     }
+    if (s.maxWeek && wkNet > s.maxWeek) setNudge(`${hm(wkNet)} cette semaine : au-dessus de ton maximum de ${hm(s.maxWeek)}.`, true);
 
-    $("punches").innerHTML = rec.punches.length
-      ? rec.punches.map((t, i) => `<button class="p ${i % 2 ? "out" : "in"}" data-edit><small>${i % 2 ? "Sortie" : "Entrée"}</small><b class="num">${t}</b></button>`).join("")
+    // today's punches + tag
+    const tags = [];
+    if (rec && rec.type !== "work") tags.push(TYPES[rec.type] + (rec.half ? " ½" : ""));
+    if (rec && rec.remote) tags.push("Télétravail");
+    if (hol && !(rec && rec.type === "ferie")) tags.push(hol);
+    $("day-tag").textContent = tags.join(" · ");
+    const pun = rec ? rec.punches : [];
+    $("punches").innerHTML = pun.length
+      ? pun.map((t, i) => `<button class="p ${i % 2 ? "out" : "in"}" data-edit><small>${i % 2 ? "Sortie" : "Entrée"}</small><b class="num">${t}</b></button>`).join("")
       : `<span class="p empty">Aucun pointage pour l'instant</span>`;
 
-    const nextIsIn = rec.punches.length % 2 === 0;
+    const nextIsIn = pun.length % 2 === 0;
     $("btn-in").classList.toggle("on", nextIsIn); $("btn-out").classList.toggle("on", !nextIsIn);
     $("btn-in").setAttribute("aria-disabled", String(!nextIsIn)); $("btn-out").setAttribute("aria-disabled", String(nextIsIn));
 
-    const mon = mondayOf(now); let wk = 0, tot = 0, any = false;
-    Object.keys(state.days).forEach(k => { const r = calc(state.days[k], k === tk); if (!r || !r.complete) return; any = true; tot += r.balance; if (parseKey(k) >= mon) wk += r.balance; });
-    $("week").innerHTML = any && !c ? `<span>Semaine <b class="num ${wk >= 0 ? "pos" : "neg"}">${signed(wk)}</b></span><span>Cumul <b class="num ${tot >= 0 ? "pos" : "neg"}">${signed(tot)}</b></span>` : "";
+    $("week").innerHTML = any && !(c && !c.absence) ? `<span>Semaine <b class="num ${wk >= 0 ? "pos" : "neg"}">${signed(wk)}</b></span><span>Cumul <b class="num ${tot >= 0 ? "pos" : "neg"}">${signed(tot)}</b></span>` : "";
 
     // projection fin de journée
     const sg = m => `<b class="${m >= 0 ? "pos" : "neg"}">${signed(m)}</b>`;
     const proj = $("proj"), inp = $("proj-out");
-    proj.hidden = !c;
+    proj.hidden = !c || (c.absence && rec.type !== "recup" && !rec.half);
+    let leaveAt = null;
     if (c && c.inside) {
       if (projDay !== tk) { projDay = tk; projOut = null; }
-      const auto = s.minOut != null ? Math.max(c.target, s.minOut) : c.target;
+      const auto = s.minOut != null && c.daily > 330 ? Math.max(c.target, s.minOut) : c.target;
       const L = projOut != null ? projOut : auto;
+      leaveAt = L;
       if (document.activeElement !== inp) inp.value = clock(L);
-      inp.parentElement.firstChild.textContent = projOut != null ? "Si tu sors à " : "À ta sortie, ";
+      $("proj-txt").textContent = projOut != null ? "Si tu sors à" : "À ta sortie,";
       inp.hidden = false;
       const pb = L - c.target;
       $("proj-bal").className = "num " + (pb >= 0 ? "pos" : "neg"); $("proj-bal").textContent = signed(pb);
       $("proj-wk").innerHTML = `${signed(wk)} → ${sg(wk + pb)}`;
       $("proj-tot").innerHTML = `${signed(tot)} → ${sg(tot + pb)}`;
-      const w = $("proj-warn");
-      if (s.minOut != null && L < s.minOut) { w.textContent = `Avant ${clock(s.minOut)} : accord de la direction nécessaire.`; w.hidden = false; } else w.hidden = true;
+      const w = $("proj-warn"), msgs = [];
+      if (s.minOut != null && L < s.minOut && c.daily > 330) msgs.push(`Avant ${clock(s.minOut)} : accord de la direction nécessaire.`);
+      const wkProj = wkNet + Math.max(0, c.raw + (L - n) - c.pauseDue);
+      if (s.maxWeek && wkProj > s.maxWeek) msgs.push(`Semaine projetée à ${hm(wkProj)}, au-dessus de ${hm(s.maxWeek)}.`);
+      w.textContent = msgs.join(" "); w.hidden = !msgs.length;
     } else if (c) {
-      inp.parentElement.firstChild.textContent = "Ajouté aujourd'hui";
+      $("proj-txt").textContent = "Ajouté aujourd'hui";
       inp.hidden = true; $("proj-warn").hidden = true;
       $("proj-bal").className = "num " + (c.balance >= 0 ? "pos" : "neg"); $("proj-bal").textContent = signed(c.balance);
       $("proj-wk").innerHTML = `${signed(wk - c.balance)} → ${sg(wk)}`;
       $("proj-tot").innerHTML = `${signed(tot - c.balance)} → ${sg(tot)}`;
     }
+    renderTransit(leaveAt);
     tick();
   }
+  $("proj-out").addEventListener("change", e => { projOut = toMin(e.target.value); render(); });
 
-  let projOut = null, projDay = null;
-  $("proj-out").addEventListener("change", e => { const v = toMin(e.target.value); projOut = v; render(); });
+  // ---------- transports (transport.opendata.ch) ----------
+  let trKey = null, trData = null, trBusy = false;
+  function renderTransit(leaveAt) {
+    const tr = state.settings.transit, box = $("transit");
+    if (!tr.from || !tr.to || leaveAt == null) { box.hidden = true; return; }
+    box.hidden = false;
+    const from = leaveAt + (Number(tr.walk) || 0);
+    $("transit-title").textContent = `Retour · ${tr.from.replace(/^Genève,\s*/, "")} → ${tr.to.replace(/^Genève,\s*/, "")}`;
+    const key = tr.from + "|" + tr.to + "|" + from + "|" + dateKey(new Date());
+    if (key !== trKey) { trKey = key; trData = null; fetchTransit(tr, from, key); }
+    const list = $("transit-list");
+    if (trData === null) { list.innerHTML = `<div class="dep"><span>Recherche des horaires…</span></div>`; return; }
+    if (trData.error) { list.innerHTML = `<div class="dep"><span>${esc(trData.error)}</span></div>`; return; }
+    if (!trData.length) { list.innerHTML = `<div class="dep"><span>Aucun départ trouvé après ${clock(from)}.</span></div>`; return; }
+    list.innerHTML = trData.map(d => `<div class="dep"><b class="num">${d.dep} → ${d.arr}</b><span>${esc(d.line)}${d.changes ? ` · ${d.changes} chgt` : ""}</span></div>`).join("")
+      + `<div class="dep"><span style="font-size:13px">Départ de l'arrêt dès ${clock(from)} (${tr.walk} min de marche)</span></div>`;
+  }
+  async function fetchTransit(tr, from, key) {
+    if (trBusy) return; trBusy = true;
+    const hhmm = (iso) => { const d = new Date(iso); return pad(d.getHours()) + ":" + pad(d.getMinutes()); };
+    try {
+      const url = "https://transport.opendata.ch/v1/connections?from=" + encodeURIComponent(tr.from) + "&to=" + encodeURIComponent(tr.to)
+        + "&date=" + dateKey(new Date()) + "&time=" + clock(from) + "&limit=3";
+      const r = await fetch(url);
+      if (!r.ok) throw new Error("http");
+      const j = await r.json();
+      const out = (j.connections || []).map(cn => {
+        const sec = (cn.sections || []).find(x => x.journey) || {};
+        const jn = sec.journey || {};
+        const line = [jn.category, jn.number].filter(Boolean).join(" ") || "Transport";
+        return { dep: hhmm(cn.from.departure), arr: hhmm(cn.to.arrival), line, changes: cn.transfers || 0 };
+      });
+      if (key === trKey) trData = out;
+    } catch (e) {
+      if (key === trKey) trData = { error: navigator.onLine === false ? "Hors connexion : horaires indisponibles." : "Horaires indisponibles pour ce trajet." };
+    }
+    trBusy = false;
+    if (key === trKey) render();
+  }
 
   let lastMin = -1;
   function tick() {
@@ -377,16 +589,17 @@ header{display:flex;flex-direction:column;gap:2px}
     lastMin = m;
   }
 
-  // ---- punch ----
+  // ---------- punch ----------
   function punch(kind) {
     const tk = dateKey(new Date());
-    const before = state.days[tk] ? { punches: [...state.days[tk].punches] } : null;
-    const rec = { punches: before ? [...before.punches] : [] };
+    const before = state.days[tk] ? JSON.parse(JSON.stringify(state.days[tk])) : null;
+    const rec = before ? JSON.parse(JSON.stringify(before)) : { punches: [], type: "work", half: false, remote: false };
     const nextIsIn = rec.punches.length % 2 === 0;
     if ((kind === "in") !== nextIsIn) return;
     const t = clock(nowMin());
     rec.punches.push(t);
     saveDay(tk, rec);
+    const b = $(kind === "in" ? "btn-in" : "btn-out"); b.classList.remove("pop"); void b.offsetWidth; b.classList.add("pop");
     toast((kind === "in" ? "Entrée" : "Sortie") + " à " + t, () => saveDay(tk, before));
   }
   $("btn-in").onclick = () => punch("in");
@@ -402,72 +615,103 @@ header{display:flex;flex-direction:column;gap:2px}
   scrim.addEventListener("click", e => { if (e.target === scrim) closeSheet(); });
   document.addEventListener("keydown", e => { if (e.key === "Escape" && !scrim.hidden) closeSheet(); });
 
-  // ---- edit a day ----
+  // ---------- edit a day ----------
   function openDay(k, isNew, draft) {
     const existing = state.days[k];
-    const times = draft ? draft.times : [...(existing ? existing.punches : [])];
-    const dateVal = draft ? draft.date : k;
-    const rows = times.map((t, i) => `<div class="item"><span class="grow">${i % 2 ? "Sortie" : "Entrée"}</span><input type="time" data-i="${i}" value="${t}"><button class="x" data-del="${i}" aria-label="Supprimer ce pointage">×</button></div>`).join("");
+    const d = draft || { date: k, times: [...(existing ? existing.punches : [])], type: existing ? existing.type : "work", half: existing ? existing.half : false, remote: existing ? existing.remote : false };
+    const hol = holidayName(d.date || k);
+    const rows = d.times.map((t, i) => `<div class="item"><span class="grow">${i % 2 ? "Sortie" : "Entrée"}</span><input type="time" data-i="${i}" value="${t}"><button class="x" data-del="${i}" aria-label="Supprimer ce pointage">×</button></div>`).join("");
+    const canHalf = d.type === "conge" || d.type === "maladie";
     openSheet(`<h3>${isNew ? "Ajouter un jour" : longDate(parseKey(k))}</h3>
-      <div class="list"><label class="item"><span>Date</span><input type="date" id="ed-date" value="${dateVal}"></label></div>
-      ${times.length ? `<div class="list">${rows}</div>` : ""}
-      <button class="addp" id="ed-add">+ Ajouter ${times.length % 2 ? "une sortie" : "une entrée"}</button>
-      <p class="note">Les pointages sont remis dans l'ordre à l'enregistrement. Si tes pauses font moins de ${state.settings.pauseMin} min au total, la différence est déduite.</p>
+      <div class="list"><label class="item"><span>Date${hol ? `<small>${esc(hol)}</small>` : ""}</span><input type="date" id="ed-date" value="${d.date}"></label></div>
+      <h4>Type de journée</h4>
+      <div class="list">
+        <div class="chips">${Object.keys(TYPES).map(t => `<button class="chip${d.type === t ? " on" : ""}" data-type="${t}">${TYPES[t]}</button>`).join("")}</div>
+        ${canHalf ? `<label class="item"><span>Demi-journée<small>L'autre moitié se pointe normalement</small></span><input type="checkbox" class="toggle" id="ed-half" ${d.half ? "checked" : ""}></label>` : ""}
+        <label class="item"><span>Télétravail</span><input type="checkbox" class="toggle" id="ed-remote" ${d.remote ? "checked" : ""}></label>
+      </div>
+      <h4>Pointages</h4>
+      ${d.times.length ? `<div class="list">${rows}</div>` : ""}
+      <button class="addp" id="ed-add">+ Ajouter ${d.times.length % 2 ? "une sortie" : "une entrée"}</button>
+      <p class="note">${d.type === "recup" ? "Une récupération sans pointage retire la journée de ton compteur." : `Les pointages sont remis dans l'ordre. Si tes pauses font moins de ${state.settings.pauseMin} min, la différence est déduite.`}</p>
       <p class="err" id="ed-err" hidden></p>
       <div class="row"><button class="ghost" id="ed-cancel">Annuler</button><button class="cta" id="ed-save">Enregistrer</button></div>
       ${existing && !isNew ? `<button class="danger" id="ed-del">Supprimer cette journée</button>` : ""}`);
-    const read = () => ({ date: $("ed-date").value, times: [...scrim.querySelectorAll("input[data-i]")].map(i => i.value) });
-    $("ed-add").onclick = () => { const d = read(); d.times.push(d.date === dateKey(new Date()) ? clock(nowMin()) : (d.times.length ? d.times[d.times.length - 1] : "08:00")); openDay(k, isNew, d); };
-    scrim.querySelectorAll("[data-del]").forEach(b => b.onclick = () => { const d = read(); d.times.splice(+b.dataset.del, 1); openDay(k, isNew, d); });
+    const read = () => ({
+      date: $("ed-date").value, times: [...scrim.querySelectorAll("input[data-i]")].map(i => i.value),
+      type: d.type, half: $("ed-half") ? $("ed-half").checked : false, remote: $("ed-remote").checked
+    });
+    scrim.querySelectorAll("[data-type]").forEach(b => b.onclick = () => { const x = read(); x.type = b.dataset.type; if (!(x.type === "conge" || x.type === "maladie")) x.half = false; openDay(k, isNew, x); });
+    $("ed-add").onclick = () => { const x = read(); x.times.push(x.date === dateKey(new Date()) ? clock(nowMin()) : (x.times.length ? x.times[x.times.length - 1] : "08:00")); openDay(k, isNew, x); };
+    scrim.querySelectorAll("[data-del]").forEach(b => b.onclick = () => { const x = read(); x.times.splice(+b.dataset.del, 1); openDay(k, isNew, x); });
     $("ed-cancel").onclick = closeSheet;
     $("ed-save").onclick = () => {
-      const d = read(), err = m => { $("ed-err").textContent = m; $("ed-err").hidden = false; };
-      if (!d.date) return err("Choisis une date.");
-      const punches = sortTimes(d.times);
-      if (!punches.length && !existing) return err("Ajoute au moins une entrée.");
-      if (!isNew && d.date !== k && existing) saveDay(k, null);
-      saveDay(d.date, { punches }); closeSheet(); toast("Enregistré");
+      const x = read(), err = m => { $("ed-err").textContent = m; $("ed-err").hidden = false; };
+      if (!x.date) return err("Choisis une date.");
+      const rec = { punches: sortTimes(x.times), type: x.type, half: x.half, remote: x.remote };
+      if (!meaningful(rec) && !existing) return err("Ajoute une entrée ou choisis un type de journée.");
+      if (!isNew && x.date !== k && existing) saveDay(k, null);
+      saveDay(x.date, rec); closeSheet(); toast("Enregistré");
     };
     const del = $("ed-del");
     if (del) del.onclick = () => { if (!del.dataset.armed) { del.dataset.armed = 1; del.textContent = "Toucher encore pour confirmer"; return; } saveDay(k, null); closeSheet(); toast("Journée supprimée"); };
   }
 
-  // ---- suivi hebdo / mensuel ----
+  // ---------- suivi hebdo / mensuel ----------
   let track = { mode: "week", anchor: new Date() };
-  const MOIS = ["janvier", "février", "mars", "avril", "mai", "juin", "juillet", "août", "septembre", "octobre", "novembre", "décembre"];
-  const isoWeek = d => { const t = new Date(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate())); const day = t.getUTCDay() || 7; t.setUTCDate(t.getUTCDate() + 4 - day); const y0 = new Date(Date.UTC(t.getUTCFullYear(), 0, 1)); return Math.ceil(((t - y0) / 864e5 + 1) / 7); };
-  const addDays = (d, n) => { const x = new Date(d); x.setDate(x.getDate() + n); return x; };
-  const short = d => d.getDate() + " " + M[d.getMonth()];
-  function totals(keys, tk) {
-    let worked = 0, bal = 0, n = 0;
-    keys.forEach(k => { const r = state.days[k] && calc(state.days[k], k === tk); if (r && r.complete) { worked += r.net; bal += r.balance; n++; } });
-    return { worked, bal, n };
-  }
   const balHtml = m => `<span class="r num ${m >= 0 ? "pos" : "neg"}">${signed(m)}</span>`;
+  const avgClock = arr => arr.length ? clock(arr.reduce((a, b) => a + b, 0) / arr.length) : "—";
+
+  function sparkline(points) {
+    // points: [{label, v}] cumulative balance per day
+    if (points.length < 2) return "";
+    const W = 300, H = 64, padX = 4, padT = 8, padB = 14;
+    const vals = points.map(p => p.v), lo = Math.min(0, ...vals), hi = Math.max(0, ...vals), span = Math.max(30, hi - lo);
+    const x = i => padX + i * (W - 2 * padX) / (points.length - 1);
+    const y = v => padT + (hi - v) * (H - padT - padB) / span;
+    const d = points.map((p, i) => (i ? "L" : "M") + x(i).toFixed(1) + " " + y(p.v).toFixed(1)).join(" ");
+    const area = d + ` L${x(points.length - 1).toFixed(1)} ${y(0).toFixed(1)} L${x(0).toFixed(1)} ${y(0).toFixed(1)} Z`;
+    const last = points[points.length - 1];
+    return `<svg class="spark" viewBox="0 0 ${W} ${H}" role="img" aria-label="Évolution du solde sur le mois">
+      <line class="zero" x1="0" x2="${W}" y1="${y(0).toFixed(1)}" y2="${y(0).toFixed(1)}"/>
+      <path class="area" d="${area}"/><path class="line" d="${d}"/>
+      <circle class="dot" cx="${x(points.length - 1).toFixed(1)}" cy="${y(last.v).toFixed(1)}" r="3"/>
+      <text x="${padX}" y="${H - 2}">${esc(points[0].label)}</text><text x="${W - padX}" y="${H - 2}" text-anchor="end">${esc(last.label)}</text>
+    </svg>`;
+  }
 
   function drawTrack() {
-    const now = new Date(), tk = dateKey(now), { mode, anchor } = track;
-    let title, sub, body, keys = [], isCurrent;
+    const now = new Date(), tk = dateKey(now), { mode, anchor } = track, s = state.settings;
+    let title, sub, body, keys = [], isCurrent, extra = "";
     if (mode === "week") {
       const mon = mondayOf(anchor);
       isCurrent = dateKey(mon) === dateKey(mondayOf(now));
       title = "Semaine " + isoWeek(mon); sub = short(mon) + " – " + short(addDays(mon, 6));
       const rows = [];
       for (let i = 0; i < 7; i++) {
-        const d = addDays(mon, i), k = dateKey(d), r = state.days[k];
-        if (i >= 5 && !r) continue;
+        const d = addDays(mon, i), k = dateKey(d), r = state.days[k], hol = holidayName(k), base = baseFor(k);
+        if (!r && !base && !hol) continue;
         keys.push(k);
-        const c = r && calc(r, k === tk), future = d > now && !r;
-        let right;
+        const c = r && calc(r, k === tk, k), future = d > now && !r;
+        let right, detail, cls = "";
         if (c && c.complete) right = balHtml(c.balance);
         else if (c) right = `<span class="r" style="color:var(--muted)">${k === tk ? "en cours" : "incomplet"}</span>`;
         else right = `<span class="r" style="color:var(--faint)">—</span>`;
-        const shown = c ? (c.complete ? c.net : c.raw) : 0;
-        const pct = c ? Math.min(100, shown / state.settings.daily * 100) : 0;
-        const detail = r ? `${clock(c.first)} → ${c.complete ? clock(c.last) : "…"} · ${hm(shown)}` : (future ? "à venir" : "pas de pointage");
-        rows.push(`<button class="item${future ? " future" : ""}" data-day="${k}"><span>${J[d.getDay()]} ${d.getDate()}<small class="num">${detail}</small>${r ? `<span class="mini"><i class="${pct >= 100 ? "full" : ""}" style="width:${pct.toFixed(0)}%"></i></span>` : ""}</span>${right}</button>`);
+        const tag = r && r.type !== "work" ? `<span class="tag">${TYPES[r.type]}${r.half ? " ½" : ""}</span>` : (hol ? `<span class="tag">Férié</span>` : "");
+        const rem = r && r.remote ? `<span class="tag">Télétravail</span>` : "";
+        if (r && r.punches.length) {
+          const shown = c.complete ? c.net : c.raw;
+          detail = `${clock(c.first)} → ${c.complete ? clock(c.last) : "…"} · ${hm(shown)}`;
+        } else if (r) detail = r.type === "recup" ? "pris sur le compteur" : "sans pointage";
+        else if (hol) { detail = hol; cls = " off"; }
+        else detail = future ? "à venir" : "pas de pointage";
+        const pct = c && c.daily ? Math.min(100, (c.complete ? c.net : c.raw) / c.daily * 100) : 0;
+        rows.push(`<button class="item${future ? " future" : ""}${cls}" data-day="${k}"><span>${J[d.getDay()]} ${d.getDate()}${tag}${rem}<small class="num">${esc(detail)}</small>${r && r.punches.length ? `<span class="mini"><i class="${pct >= 100 ? "full" : ""}" style="width:${pct.toFixed(0)}%"></i></span>` : ""}</span>${right}</button>`);
       }
       body = `<div class="list">${rows.join("")}</div>`;
+      const t = totalsOf(weekKeys(mon), tk);
+      if (s.maxWeek && t.worked > s.maxWeek) extra = `<p class="err">${hm(t.worked)} travaillées : au-dessus de ton maximum hebdo de ${hm(s.maxWeek)}.</p>`;
+      keys = weekKeys(mon);
     } else {
       const y = anchor.getFullYear(), m = anchor.getMonth(), first = new Date(y, m, 1), lastD = new Date(y, m + 1, 0);
       isCurrent = y === now.getFullYear() && m === now.getMonth();
@@ -476,20 +720,38 @@ header{display:flex;flex-direction:column;gap:2px}
       const weeks = []; let mon = mondayOf(first);
       while (mon <= lastD && mon <= now) {
         const wk = keys.filter(k => { const d = parseKey(k); return d >= mon && d < addDays(mon, 7); });
-        const t = totals(wk, tk);
+        const t = totalsOf(wk, tk);
         const a = mon < first ? first : mon, b = addDays(mon, 6) > lastD ? lastD : addDays(mon, 6);
         weeks.push(`<button class="item" data-week="${dateKey(mon)}"><span>Semaine ${isoWeek(mon)}<small>${short(a)} – ${short(b)} · ${t.n} jour${t.n > 1 ? "s" : ""}</small></span>${t.n ? balHtml(t.bal) : `<span class="r" style="color:var(--faint)">—</span>`}</button>`);
         mon = addDays(mon, 7);
       }
-      sub = keys.length + " jour" + (keys.length > 1 ? "s" : "") + " pointé" + (keys.length > 1 ? "s" : "");
-      body = weeks.length ? `<div class="list">${weeks.join("")}</div>` : `<p class="note" style="margin:0">Rien à afficher pour ce mois.</p>`;
+      sub = keys.length + " jour" + (keys.length > 1 ? "s" : "") + " enregistré" + (keys.length > 1 ? "s" : "");
+      // stats
+      const ins = [], outs = [], worked = []; let remote = 0, cum = 0; const pts = [];
+      keys.forEach(k => {
+        const r = state.days[k], c = calcK(k, tk);
+        if (r.remote) remote++;
+        if (c && c.complete && r.punches.length) { ins.push(c.first); outs.push(c.last); worked.push(c.net); }
+        if (c && c.complete) { cum += c.balance; pts.push({ label: short(parseKey(k)), v: cum }); }
+      });
+      const yearKeys = Object.keys(state.days).filter(k => k.startsWith(String(y)));
+      const vac = yearKeys.reduce((a, k) => { const r = state.days[k]; return a + (r.type === "conge" ? (r.half ? .5 : 1) : 0); }, 0);
+      const remoteY = yearKeys.filter(k => state.days[k].remote).length;
+      extra = `${pts.length >= 2 ? `<div class="sparkwrap">${sparkline(pts)}</div>` : ""}
+        <div class="sum small"><div>Arrivée moy.<b class="num">${avgClock(ins)}</b></div><div>Sortie moy.<b class="num">${avgClock(outs)}</b></div><div>Par jour<b class="num">${worked.length ? hm(worked.reduce((a, b) => a + b, 0) / worked.length) : "—"}</b></div></div>
+        <div class="list">
+          <div class="item"><span>Congés pris en ${y}</span><span class="r num">${String(vac).replace(".", ",")} / ${s.vacDays} j</span></div>
+          <div class="item"><span>Télétravail<small>${remote} ce mois</small></span><span class="r num">${remoteY}${s.remoteCap ? ` / ${s.remoteCap}` : ""} j en ${y}</span></div>
+        </div>`;
+      body = weeks.length ? `<div class="list">${weeks.join("")}</div>` : `<p class="note" style="margin:0 16px">Rien à afficher pour ce mois.</p>`;
     }
-    const t = totals(keys, tk);
+    const t = totalsOf(keys, tk);
     openSheet(`<div class="seg" role="tablist"><button data-mode="week" class="${mode === "week" ? "on" : ""}">Semaine</button><button data-mode="month" class="${mode === "month" ? "on" : ""}">Mois</button></div>
       <div class="nav"><button id="tr-prev" aria-label="Précédent">‹</button><div>${title}<small>${sub}</small></div><button id="tr-next" aria-label="Suivant" ${isCurrent ? "disabled" : ""}>›</button></div>
-      <div class="sum"><div>Solde<b class="num ${t.n ? (t.bal >= 0 ? "pos" : "neg") : ""}">${t.n ? signed(t.bal) : "—"}</b></div><div>Travaillé<b class="num">${hm(t.worked)}</b></div><div>Prévu<b class="num">${hm(t.n * state.settings.daily)}</b></div></div>
-      ${body}
-      <button class="ghost" id="h-add">Ajouter une journée passée</button>`);
+      <div class="sum"><div>Solde<b class="num ${t.n ? (t.bal >= 0 ? "pos" : "neg") : ""}">${t.n ? signed(t.bal) : "—"}</b></div><div>Travaillé<b class="num">${hm(t.worked)}</b></div><div>Prévu<b class="num">${hm(t.target)}</b></div></div>
+      ${mode === "month" ? extra + body : body + extra}
+      ${mode === "month" ? `<button class="ghost" id="h-export">Exporter le mois (tableur)</button>` : ""}
+      <button class="ghost" id="h-add">Ajouter une journée</button>`);
     scrim.querySelectorAll("[data-mode]").forEach(b => b.onclick = () => { track.mode = b.dataset.mode; drawTrack(); });
     scrim.querySelectorAll("[data-day]").forEach(b => b.onclick = () => openDay(b.dataset.day, !state.days[b.dataset.day]));
     scrim.querySelectorAll("[data-week]").forEach(b => b.onclick = () => { track = { mode: "week", anchor: parseKey(b.dataset.week) }; drawTrack(); });
@@ -497,40 +759,110 @@ header{display:flex;flex-direction:column;gap:2px}
     $("tr-prev").onclick = () => step(-1);
     $("tr-next").onclick = () => step(1);
     $("h-add").onclick = () => { const y = new Date(); y.setDate(y.getDate() - 1); openDay(dateKey(y), true); };
+    if ($("h-export")) $("h-export").onclick = () => exportMonth(anchor.getFullYear(), anchor.getMonth());
   }
 
-  // ---- settings ----
+  function exportMonth(y, m) {
+    const tk = dateKey(new Date()), lastD = new Date(y, m + 1, 0).getDate();
+    const lines = [["Date", "Jour", "Type", "Télétravail", "Pointages", "Travaillé", "Prévu", "Solde"].join(";")];
+    let tot = 0;
+    for (let d = 1; d <= lastD; d++) {
+      const k = dateKey(new Date(y, m, d)), r = state.days[k], hol = holidayName(k);
+      if (!r && !hol) continue;
+      const c = calcK(k, tk);
+      if (c && c.complete) tot += c.balance;
+      lines.push([k, JL[parseKey(k).getDay()], r ? TYPES[r.type] + (r.half ? " (1/2)" : "") : "Férié" + (hol ? " - " + hol : ""), r && r.remote ? "oui" : "",
+        r ? r.punches.join(" ") : "", c && c.complete ? hm(c.net) : "", c ? hm(c.daily) : "", c && c.complete ? signed(c.balance).replace("−", "-") : ""].join(";"));
+    }
+    lines.push(["Total", "", "", "", "", "", "", signed(tot).replace("−", "-")].join(";"));
+    const name = `balancier-${y}-${pad(m + 1)}.csv`;
+    shareFile(name, "﻿" + lines.join("\n"), "text/csv");
+  }
+  async function shareFile(name, text, type) {
+    const blob = new Blob([text], { type });
+    try {
+      const file = new File([blob], name, { type });
+      if (navigator.canShare && navigator.canShare({ files: [file] })) { await navigator.share({ files: [file], title: name }); return true; }
+    } catch (e) { if (e && e.name === "AbortError") return false; }
+    const a = document.createElement("a"); a.href = URL.createObjectURL(blob); a.download = name; document.body.appendChild(a); a.click(); a.remove();
+    toast("Fichier " + name + " exporté"); return true;
+  }
+
+  // ---------- settings ----------
   function openSettings() {
-    const s = state.settings;
+    const s = state.settings, D = ["Lun", "Mar", "Mer", "Jeu", "Ven", "Sam", "Dim"], idx = [1, 2, 3, 4, 5, 6, 0];
     openSheet(`<h3>Réglages</h3>
-      <div class="list"><div class="item" style="padding-bottom:0"><span>Nuance de gris</span></div><div class="tones">${Object.keys(TONES).map(k => `<button class="tone${(s.tone || "ios") === k ? " on" : ""}" data-tone="${k}"><i style="background:${TONES[k].raised};box-shadow:inset 0 0 0 1px ${TONES[k].hair}, inset 0 -14px 0 ${TONES[k].muted}"></i>${TONES[k].name}</button>`).join("")}</div></div>
+      <h4>Apparence</h4>
       <div class="list">
-        <label class="item"><span>Temps par jour</span><input type="time" id="st-daily" value="${clock(s.daily)}"></label>
-        <label class="item"><span>Pause minimum</span><input type="number" inputmode="numeric" min="0" max="180" id="st-pause" value="${s.pauseMin}" style="max-width:70px"></label>
+        <div class="item"><span>Thème</span></div>
+        <div style="padding:0 16px 12px"><div class="seg">${[["auto", "Auto"], ["light", "Clair"], ["dark", "Sombre"]].map(([v, l]) => `<button data-theme="${v}" class="${s.theme === v ? "on" : ""}">${l}</button>`).join("")}</div></div>
+        <div class="item" style="border-top:.5px solid var(--hair)"><span>Nuance de gris</span></div>
+        <div class="tones">${Object.keys(TONES).map(k => { const c = TONES[k][document.documentElement.dataset.theme === "dark" ? "dark" : "light"]; return `<button class="tone${(s.tone || "ios") === k ? " on" : ""}" data-tone="${k}"><i style="background:${c[0]};box-shadow:inset 0 0 0 1px ${c[1]}, inset 0 -14px 0 ${c[2]}"></i>${TONES[k].name}</button>`; }).join("")}</div>
       </div>
+      <h4>Horaire</h4>
       <div class="list">
+        ${idx.map((di, i) => `<label class="item"><span>${D[i]}</span><input type="time" data-sched="${di}" value="${s.sched[di] ? clock(s.sched[di]) : ""}"></label>`).join("")}
+      </div>
+      <p class="note">Laisse vide pour un jour non travaillé.</p>
+      <div class="list">
+        <label class="item"><span>Pause minimum (min)</span><input type="number" inputmode="numeric" min="0" max="180" id="st-pause" value="${s.pauseMin}" style="max-width:70px"></label>
         <label class="item"><span>Arrivée possible dès</span><input type="time" id="st-ws" value="${clock(s.winStart)}"></label>
         <label class="item"><span>Compter seulement dès cette heure</span><input type="checkbox" class="toggle" id="st-clamp" ${s.clampStart ? "checked" : ""}></label>
-      </div>
-      <div class="list">
         <label class="item"><span>Sortie au plus tôt<small>Vide = pas de limite</small></span><input type="time" id="st-minout" value="${s.minOut != null ? clock(s.minOut) : ""}"></label>
+        <label class="item"><span>Maximum par semaine (h)</span><input type="number" inputmode="decimal" min="0" max="80" step="0.5" id="st-maxw" value="${s.maxWeek ? s.maxWeek / 60 : ""}" style="max-width:70px"></label>
       </div>
+      <h4>Absences</h4>
+      <div class="list">
+        <label class="item"><span>Jours fériés</span><select id="st-hol"><option value="GE" ${s.holidays === "GE" ? "selected" : ""}>Genève</option><option value="none" ${s.holidays !== "GE" ? "selected" : ""}>Aucun</option></select></label>
+        <label class="item"><span>Jours de congé par an</span><input type="number" inputmode="decimal" min="0" max="60" step="0.5" id="st-vac" value="${s.vacDays}" style="max-width:70px"></label>
+        <label class="item"><span>Télétravail max par an (j)<small>Vide = pas de suivi de plafond</small></span><input type="number" inputmode="numeric" min="0" max="365" id="st-rcap" value="${s.remoteCap || ""}" style="max-width:70px"></label>
+      </div>
+      <h4>Trajet retour</h4>
+      <div class="list">
+        <label class="item"><span>Départ</span><input type="text" id="st-from" list="dl-stops" placeholder="Arrêt près du travail" value="${esc(s.transit.from)}" autocomplete="off"></label>
+        <label class="item"><span>Arrivée</span><input type="text" id="st-to" list="dl-stops" placeholder="Arrêt ou gare" value="${esc(s.transit.to)}" autocomplete="off"></label>
+        <label class="item"><span>Marche jusqu'à l'arrêt (min)</span><input type="number" inputmode="numeric" min="0" max="60" id="st-walk" value="${s.transit.walk}" style="max-width:70px"></label>
+      </div>
+      <datalist id="dl-stops"></datalist>
+      <p class="note">Horaires des transports publics suisses. Les prochains départs s'affichent d'après ton heure de sortie.</p>
       <button class="cta" id="st-save">Enregistrer</button>
-      <h3 style="margin-top:6px">Sauvegarde</h3>
-      <p class="note" style="margin:-8px 4px 0">Tes pointages sont enregistrés sur cet iPhone. Exporte une copie de temps en temps (dans Fichiers ou iCloud Drive).</p>
-      <div class="row"><button class="ghost" id="bk-exp">Exporter</button><label class="ghost" style="display:flex;align-items:center;justify-content:center;cursor:pointer">Importer<input type="file" id="bk-imp" accept="application/json,.json" hidden></label></div>
+      <h4>Sauvegarde</h4>
+      <p class="note" style="margin-top:0">Tes pointages sont enregistrés sur cet iPhone. Exporte une copie de temps en temps (dans Fichiers ou iCloud Drive).</p>
+      <div class="row"><button class="ghost" id="bk-exp">Exporter</button><label class="ghost">Importer<input type="file" id="bk-imp" accept="application/json,.json" hidden></label></div>
       <p class="note" id="bk-msg" hidden></p>`);
-    const bkMsg = m => { const el = $("bk-msg"); el.textContent = m; el.hidden = false; };
-    $("bk-exp").onclick = async () => {
-      const name = "balancier-" + dateKey(new Date()) + ".json";
-      const blob = new Blob([JSON.stringify(state, null, 1)], { type: "application/json" });
-      try {
-        const file = new File([blob], name, { type: "application/json" });
-        if (navigator.canShare && navigator.canShare({ files: [file] })) { await navigator.share({ files: [file], title: name }); return; }
-      } catch (e) { if (e && e.name === "AbortError") return; }
-      const a = document.createElement("a"); a.href = URL.createObjectURL(blob); a.download = name; document.body.appendChild(a); a.click(); a.remove();
-      bkMsg("Fichier " + name + " exporté.");
+    scrim.querySelectorAll("[data-tone]").forEach(b => b.onclick = () => {
+      state.settings.tone = b.dataset.tone; saveSettings();
+      scrim.querySelectorAll("[data-tone]").forEach(x => x.classList.toggle("on", x === b));
+    });
+    scrim.querySelectorAll("[data-theme]").forEach(b => b.onclick = () => { state.settings.theme = b.dataset.theme; saveSettings(); openSettings(); });
+    // stop autocomplete
+    let acT;
+    ["st-from", "st-to"].forEach(id => $(id).addEventListener("input", e => {
+      clearTimeout(acT); const q = e.target.value.trim(); if (q.length < 3) return;
+      acT = setTimeout(async () => {
+        try {
+          const r = await fetch("https://transport.opendata.ch/v1/locations?type=station&query=" + encodeURIComponent(q));
+          const j = await r.json();
+          $("dl-stops").innerHTML = (j.stations || []).filter(x => x.name).slice(0, 8).map(x => `<option value="${esc(x.name)}">`).join("");
+        } catch (err) {}
+      }, 300);
+    }));
+    $("st-save").onclick = () => {
+      const num = (id, def) => { const v = parseFloat(String($(id).value).replace(",", ".")); return isNaN(v) ? def : v; };
+      const sched = [...state.settings.sched];
+      scrim.querySelectorAll("[data-sched]").forEach(i => { sched[+i.dataset.sched] = toMin(i.value) || 0; });
+      state.settings = {
+        ...state.settings, sched,
+        pauseMin: Math.max(0, Math.round(num("st-pause", 30))),
+        winStart: toMin($("st-ws").value) ?? 390, clampStart: $("st-clamp").checked,
+        minOut: toMin($("st-minout").value), maxWeek: Math.round(num("st-maxw", 0) * 60),
+        holidays: $("st-hol").value, vacDays: num("st-vac", 25), remoteCap: Math.round(num("st-rcap", 0)),
+        transit: { from: $("st-from").value.trim(), to: $("st-to").value.trim(), walk: Math.max(0, Math.round(num("st-walk", 10))) }
+      };
+      trKey = null; saveSettings(); closeSheet(); toast("Réglages enregistrés");
     };
+    const bkMsg = m => { const el = $("bk-msg"); el.textContent = m; el.hidden = false; };
+    $("bk-exp").onclick = () => shareFile("balancier-" + dateKey(new Date()) + ".json", JSON.stringify(state, null, 1), "application/json");
     $("bk-imp").onchange = e => {
       const f = e.target.files && e.target.files[0]; if (!f) return;
       const rd = new FileReader();
@@ -539,25 +871,16 @@ header{display:flex;flex-direction:column;gap:2px}
           const data = JSON.parse(rd.result);
           if (!data || typeof data.days !== "object") throw 0;
           let n = 0;
-          Object.keys(data.days).forEach(k => { if (/^\d{4}-\d{2}-\d{2}$/.test(k)) { const r = norm(data.days[k]); if (r.punches.length) { state.days[k] = r; n++; } } });
-          if (data.settings) state.settings = { ...DEFAULT_SETTINGS, ...data.settings };
+          Object.keys(data.days).forEach(k => { if (/^\d{4}-\d{2}-\d{2}$/.test(k)) { const r = norm(data.days[k]); if (meaningful(r)) { state.days[k] = r; n++; } } });
+          if (data.settings) state.settings = migrateSettings(data.settings);
           lsWrite(); render(); closeSheet(); toast(n + " journées importées");
         } catch (err) { bkMsg("Fichier non reconnu. Choisis un fichier exporté depuis Balancier."); }
       };
       rd.readAsText(f);
     };
-    scrim.querySelectorAll("[data-tone]").forEach(b => b.onclick = () => {
-      state.settings.tone = b.dataset.tone; saveSettings();
-      scrim.querySelectorAll("[data-tone]").forEach(x => x.classList.toggle("on", x === b));
-    });
-    $("st-save").onclick = () => {
-      const pm = parseInt($("st-pause").value, 10);
-      state.settings = { ...state.settings, daily: toMin($("st-daily").value) || 504, pauseMin: isNaN(pm) ? 30 : Math.max(0, pm), winStart: toMin($("st-ws").value) ?? 390, clampStart: $("st-clamp").checked, minOut: toMin($("st-minout").value) };
-      saveSettings(); closeSheet(); toast("Réglages enregistrés");
-    };
   }
 
-  // ---- toast with optional undo ----
+  // ---------- toast with optional undo ----------
   let tt;
   function toast(m, undo) {
     const t = $("toast"), u = $("toast-undo");
@@ -569,12 +892,11 @@ header{display:flex;flex-direction:column;gap:2px}
 
   render();
   setInterval(tick, 1000);
-  document.addEventListener("visibilitychange", () => { if (!document.hidden) render(); });
-  window.__calc = calc;
+  document.addEventListener("visibilitychange", () => { if (!document.hidden) { trKey = null; render(); } });
   try { navigator.storage && navigator.storage.persist && navigator.storage.persist(); } catch (e) {}
   if ("serviceWorker" in navigator) navigator.serviceWorker.register("sw.js").catch(() => {});
+  window.__b = { calc, calcK, holidaysGE, targetFor, state: () => state };
 })();
 </script>
-
 </body>
 </html>
