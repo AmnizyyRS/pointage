@@ -6,14 +6,14 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
-<meta name="apple-mobile-web-app-title" content="Pointage">
+<meta name="apple-mobile-web-app-title" content="Balancier.">
 <meta name="theme-color" content="#FFFFFF">
 <meta name="format-detection" content="telephone=no">
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
 <link rel="icon" type="image/png" href="favicon.png">
 <style>html{box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px);-webkit-text-size-adjust:100%}body{margin:0}img{max-width:100%}html,body{overscroll-behavior:none}</style>
-<title>Pointage</title>
+<title>Balancier.</title>
 <style>
 /* Layout: iOS-like single screen. Large title, departure time, projection card, today's punches, Entrée/Sortie in the thumb zone. Light, black on white with grey groups. Grey tone is user-selectable (Réglages). */
 :root{
@@ -41,7 +41,7 @@ button{cursor:pointer;-webkit-tap-highlight-color:transparent}
 header{display:flex;flex-direction:column;gap:2px}
 .date{order:-1;color:var(--muted);font-size:13px;font-weight:600;text-transform:uppercase;letter-spacing:.02em}
 .logo{font-family:var(--f-display);font-size:34px;font-weight:700;letter-spacing:-.02em;line-height:1.1}
-.logo span{display:none}
+.logo span{color:var(--muted)}
 
 .hero{margin-top:26px;display:flex;flex-direction:column}
 .kicker{color:var(--muted);font-size:15px;font-weight:500}
@@ -146,7 +146,7 @@ header{display:flex;flex-direction:column;gap:2px}
 
 <div class="app">
   <header>
-    <div class="logo">Pointage<span>.</span></div>
+    <div class="logo">Balancier<span>.</span></div>
     <div class="date" id="date"></div>
   </header>
 
@@ -522,7 +522,7 @@ header{display:flex;flex-direction:column;gap:2px}
       <p class="note" id="bk-msg" hidden></p>`);
     const bkMsg = m => { const el = $("bk-msg"); el.textContent = m; el.hidden = false; };
     $("bk-exp").onclick = async () => {
-      const name = "pointage-" + dateKey(new Date()) + ".json";
+      const name = "balancier-" + dateKey(new Date()) + ".json";
       const blob = new Blob([JSON.stringify(state, null, 1)], { type: "application/json" });
       try {
         const file = new File([blob], name, { type: "application/json" });
@@ -542,7 +542,7 @@ header{display:flex;flex-direction:column;gap:2px}
           Object.keys(data.days).forEach(k => { if (/^\d{4}-\d{2}-\d{2}$/.test(k)) { const r = norm(data.days[k]); if (r.punches.length) { state.days[k] = r; n++; } } });
           if (data.settings) state.settings = { ...DEFAULT_SETTINGS, ...data.settings };
           lsWrite(); render(); closeSheet(); toast(n + " journées importées");
-        } catch (err) { bkMsg("Fichier non reconnu. Choisis un fichier exporté depuis Pointage."); }
+        } catch (err) { bkMsg("Fichier non reconnu. Choisis un fichier exporté depuis Balancier."); }
       };
       rd.readAsText(f);
     };

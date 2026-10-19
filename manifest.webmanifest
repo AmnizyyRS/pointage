@@ -1,6 +1,6 @@
 {
-  "name": "Pointage",
-  "short_name": "Pointage",
+  "name": "Balancier.",
+  "short_name": "Balancier.",
   "start_url": "./",
   "scope": "./",
   "display": "standalone",
