@@ -314,7 +314,7 @@ header{display:flex;align-items:flex-end;justify-content:space-between;gap:12px}
   const clone = o => JSON.parse(JSON.stringify(o));
   const DEFAULT_SETTINGS = {
     sched: [0, 504, 504, 504, 504, 504, 0],   // index = getDay() (0 = dimanche)
-    pauseMin: 30, winStart: 390, clampStart: false, minOut: 945,
+    pauseMin: 30, offered: 20, winStart: 390, clampStart: false, minOut: 945,
     tone: "ios", theme: "auto", holidays: "GE",
     vacDays: 25, maxWeek: 2700, remoteCap: 0,
     transit: { home: "", work: "", margin: 5 }
@@ -415,19 +415,23 @@ header{display:flex;align-items:flex-end;justify-content:space-between;gap:12px}
       return { inside: false, raw: 0, gaps: 0, pauseDue: 0, net: 0, remaining: t, daily: t, first: null, last: null, target: null, complete: true, balance: -t, absence: true };
     }
     if (s.clampStart) p[0] = Math.max(p[0], s.winStart);
-    let raw = 0, gaps = 0;
+    let raw = 0, gaps = 0; const gapList = [];
     for (let i = 0; i < p.length; i += 2) {
       const a = p[i], b = i + 1 < p.length ? p[i + 1] : (isToday ? n : null);
       if (b != null) raw += Math.max(0, b - a);
-      if (i > 0) gaps += Math.max(0, p[i] - p[i - 1]);
+      if (i > 0) { const g = Math.max(0, p[i] - p[i - 1]); gaps += g; gapList.push(g); }
     }
     const inside = p.length % 2 === 1;
     const needsPause = t > 330 || raw > 330;
-    const pauseDue = needsPause ? Math.max(0, s.pauseMin - gaps) : 0;
-    const net = Math.max(0, raw - pauseDue);
-    const remaining = t + (t > 330 ? Math.max(0, s.pauseMin - gaps) : pauseDue) - raw;
+    // la plus longue pause = pause de midi (non payée, minimum pauseMin) ; les autres pauses sont offertes jusqu'à s.offered min
+    const lunch = needsPause && gapList.length ? Math.max(...gapList) : 0;
+    const others = gaps - lunch;
+    const offered = Math.min(s.offered || 0, others);
+    const pauseDue = needsPause ? Math.max(0, s.pauseMin - lunch) : 0;
+    const net = Math.max(0, raw + offered - pauseDue);
+    const remaining = t + (t > 330 ? Math.max(0, s.pauseMin - lunch) : pauseDue) - raw - offered;
     return {
-      inside, raw, gaps, pauseDue, net, remaining, daily: t,
+      inside, raw, gaps, lunch, offered, pauseDue, net, remaining, daily: t,
       first: p[0], last: p[p.length - 1],
       target: inside && isToday ? n + remaining : null,
       complete: !inside, balance: !inside ? net - t : null
@@ -539,7 +543,7 @@ header{display:flex;align-items:flex-end;justify-content:space-between;gap:12px}
       $("kicker").textContent = blocked ? `Départ · pas avant ${clock(s.minOut)}` : "Départ";
       time.textContent = clock(leave);
       $("fill").style.width = Math.min(100, c.raw / Math.max(1, c.raw + Math.max(0, c.remaining)) * 100).toFixed(1) + "%";
-      $("meta-l").innerHTML = `<b>${hm(c.raw)}</b> de présence`;
+      $("meta-l").innerHTML = `<b>${hm(c.raw)}</b> de présence${c.offered ? ` <span>+ ${c.offered} min offertes</span>` : ""}`;
       if (blocked) $("meta-r").innerHTML = c.remaining > 0 ? `${hm(c.daily)} atteintes à <b>${clock(c.target)}</b>` : `<b class="pos">${signed(-c.remaining)}</b> · encore <b>${hm(s.minOut - n)}</b>`;
       else if (c.remaining > 0 && c.remaining <= 30) $("meta-r").innerHTML = `plus que <b>${c.remaining} min</b>`;
       else $("meta-r").innerHTML = c.remaining > 0 ? `encore <b>${hm(c.remaining)}</b>` : `<b class="pos">${signed(-c.remaining)}</b>`;
@@ -550,7 +554,7 @@ header{display:flex;align-items:flex-end;justify-content:space-between;gap:12px}
       time.textContent = signed(c.balance); time.classList.add(c.balance >= 0 ? "pos" : "neg");
       $("fill").style.width = Math.min(100, c.daily ? c.net / c.daily * 100 : 100).toFixed(1) + "%";
       $("meta-l").innerHTML = `<b>${hm(c.net)}</b> comptées`;
-      $("meta-r").textContent = c.pauseDue > 0 ? `pause ${s.pauseMin} min déduite` : (c.gaps ? `pause ${hm(c.gaps)}` : "");
+      $("meta-r").textContent = [c.pauseDue > 0 ? `pause midi ${s.pauseMin} min déduite` : (c.lunch ? `pause midi ${c.lunch} min` : ""), c.offered ? `${c.offered} min offertes` : ""].filter(Boolean).join(" · ");
     }
     if (s.maxWeek && wkNet > s.maxWeek) setNudge(`${hm(wkNet)} cette semaine : au-dessus de ton maximum de ${hm(s.maxWeek)}.`, true);
 
@@ -744,7 +748,7 @@ header{display:flex;align-items:flex-end;justify-content:space-between;gap:12px}
       <h4>Pointages</h4>
       ${d.times.length ? `<div class="list">${rows}</div>` : ""}
       <button class="addp" id="ed-add">+ Ajouter ${d.times.length % 2 ? "une sortie" : "une entrée"}</button>
-      <p class="note">${d.type === "recup" ? "Une récupération sans pointage retire la journée de ton compteur." : `Les pointages sont remis dans l'ordre. Si tes pauses font moins de ${state.settings.pauseMin} min, la différence est déduite.`}</p>
+      <p class="note">${d.type === "recup" ? "Une récupération sans pointage retire la journée de ton compteur." : `Les pointages sont remis dans l'ordre. La plus longue pause compte comme pause de midi (minimum ${state.settings.pauseMin} min, non payée). Les autres pauses sont offertes jusqu'à ${state.settings.offered || 0} min par jour.`}</p>
       <p class="err" id="ed-err" hidden></p>
       <div class="row"><button class="ghost" id="ed-cancel">Annuler</button><button class="cta" id="ed-save">Enregistrer</button></div>
       ${existing && !isNew ? `<button class="danger" id="ed-del">Supprimer cette journée</button>` : ""}`);
@@ -1029,7 +1033,8 @@ header{display:flex;align-items:flex-end;justify-content:space-between;gap:12px}
       <p class="note">Durée à faire chaque jour. Laisse vide pour un jour non travaillé.</p>
       <h4>Règles</h4>
       <div class="list">
-        <label class="item"><span>Pause minimum (min)</span><input type="number" inputmode="numeric" min="0" max="180" id="st-pause" value="${s.pauseMin}" style="max-width:70px"></label>
+        <label class="item"><span>Pause offerte par jour (min)<small>Pauses courtes payées : comptées comme du travail</small></span><input type="number" inputmode="numeric" min="0" max="120" id="st-off" value="${s.offered || 0}" style="max-width:70px"></label>
+        <label class="item"><span>Pause de midi minimum (min)<small>Non payée, déduite si elle est plus courte</small></span><input type="number" inputmode="numeric" min="0" max="180" id="st-pause" value="${s.pauseMin}" style="max-width:70px"></label>
         <label class="item"><span>Arrivée possible dès</span><input type="time" id="st-ws" value="${clock(s.winStart)}"></label>
         <label class="item"><span>Compter seulement dès cette heure</span><input type="checkbox" class="toggle" id="st-clamp" ${s.clampStart ? "checked" : ""}></label>
         <label class="item"><span>Sortie au plus tôt<small>Vide = pas de limite</small></span><input type="time" id="st-minout" value="${s.minOut != null ? clock(s.minOut) : ""}"></label>
@@ -1074,7 +1079,7 @@ header{display:flex;align-items:flex-end;justify-content:space-between;gap:12px}
       v.querySelectorAll("[data-sched]").forEach(i => { sched[+i.dataset.sched] = toMin(i.value) || 0; });
       state.settings = {
         ...state.settings, sched,
-        pauseMin: Math.max(0, Math.round(num("st-pause", 30))),
+        pauseMin: Math.max(0, Math.round(num("st-pause", 30))), offered: Math.max(0, Math.round(num("st-off", 0))),
         winStart: toMin($("st-ws").value) ?? 390, clampStart: $("st-clamp").checked,
         minOut: toMin($("st-minout").value), maxWeek: Math.round(num("st-maxw", 0) * 60),
         holidays: $("st-hol").value, vacDays: num("st-vac", 25), remoteCap: Math.round(num("st-rcap", 0)),
