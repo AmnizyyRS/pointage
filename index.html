@@ -210,7 +210,20 @@ header{display:flex;align-items:flex-end;justify-content:space-between;gap:12px}
 .tone i{display:block;width:44px;height:44px;border-radius:22px;border:2px solid transparent;box-shadow:inset 0 0 0 1px rgba(128,128,128,.25)}
 .tone.on{color:var(--fg);font-weight:600}
 .tone.on i{border-color:var(--fg)}
-.transit{display:flex;flex-direction:column;gap:6px}
+.transit{display:flex;flex-direction:column;gap:8px}
+.tr-main{display:flex;justify-content:space-between;align-items:flex-end;gap:12px}
+.tr-main b{display:block;font-family:var(--f-display);font-size:30px;font-weight:700;letter-spacing:-.02em;line-height:1.05}
+.tr-r{text-align:right}
+.tr-k{font-size:13px;color:var(--muted);font-weight:500}
+.tr-lines{display:flex;flex-wrap:wrap;align-items:center;gap:6px}
+.chipline{background:var(--fg);color:var(--bg);font-size:13px;font-weight:600;border-radius:6px;padding:3px 8px}
+.sep{color:var(--muted)}
+.late{color:var(--warn);font-weight:600;font-size:14px}
+.tr-sub{font-size:14px;color:var(--muted)}
+.tr-tip{font-size:14px;color:var(--muted)}
+.tr-tip b{color:var(--fg)}
+.tr-more{border:0;background:none;color:var(--fg);font-weight:600;font-size:15px;padding:4px 0 0;text-align:left}
+.item.leg{padding-block:10px;min-height:0}
 .dep{display:flex;justify-content:space-between;gap:10px;font-size:15px}
 .dep b{font-weight:600}
 .dep span{color:var(--muted)}
@@ -304,7 +317,7 @@ header{display:flex;align-items:flex-end;justify-content:space-between;gap:12px}
     pauseMin: 30, winStart: 390, clampStart: false, minOut: 945,
     tone: "ios", theme: "auto", holidays: "GE",
     vacDays: 25, maxWeek: 2700, remoteCap: 0,
-    transit: { from: "", to: "", walk: 10 }
+    transit: { home: "", work: "", margin: 5 }
   };
   let state = { settings: clone(DEFAULT_SETTINGS), days: {} };
 
@@ -341,7 +354,8 @@ header{display:flex;align-items:flex-end;justify-content:space-between;gap:12px}
   function migrateSettings(s) {
     const out = { ...clone(DEFAULT_SETTINGS), ...(s || {}) };
     if (!Array.isArray(out.sched) || out.sched.length !== 7) { const d = (s && s.daily) || 504; out.sched = [0, d, d, d, d, d, 0]; }
-    out.transit = { ...DEFAULT_SETTINGS.transit, ...((s && s.transit) || {}) };
+    const ot = (s && s.transit) || {};
+    out.transit = { home: ot.home || ot.to || "", work: ot.work || ot.from || "", margin: ot.margin ?? ot.walk ?? 5 };
     delete out.daily; delete out.winEnd;
     return out;
   }
@@ -584,48 +598,97 @@ header{display:flex;align-items:flex-end;justify-content:space-between;gap:12px}
       $("proj-wk").innerHTML = `${signed(wk - c.balance)} → ${sg(wk)}`;
       $("proj-tot").innerHTML = `${signed(tot - c.balance)} → ${sg(tot)}`;
     }
-    renderTransit(leaveAt);
+    if (!c && t0 > 0) renderTransit("aller", n);
+    else if (c && c.inside) renderTransit("retour", leaveAt);
+    else renderTransit(null);
   }
   $("proj-out").addEventListener("change", e => { projOut = toMin(e.target.value); render(); });
 
-  // ---------- transports (transport.opendata.ch) ----------
-  let trKey = null, trData = null, trBusy = false;
-  function renderTransit(leaveAt) {
-    const tr = state.settings.transit, box = $("transit");
-    if (!tr.from || !tr.to || leaveAt == null) { box.hidden = true; return; }
+  // ---------- trajets domicile <-> travail (transport.opendata.ch) ----------
+  const trCfg = () => { const t = state.settings.transit || {}; return { home: t.home || "", work: t.work || "", margin: t.margin ?? 5 }; };
+  const CAT = { T: "Tram", NFT: "Tram", B: "Bus", BUS: "Bus", NFB: "Bus", KB: "Bus", S: "Train", SN: "Train", SL: "Léman Express", R: "Train", RE: "RegioExpress", IR: "InterRegio", IC: "InterCity", ICE: "ICE", TGV: "TGV", TER: "TER", EC: "EuroCity", BAT: "Bateau", M: "Métro" };
+  const short1 = s => String(s || "").replace(/^Genève,\s*/, "");
+  const durMin = d => { if (d == null) return 0; if (typeof d === "number") return Math.round(d / 60); const m = String(d).match(/(?:(\d+)d)?(\d+):(\d+)(?::(\d+))?/); return m ? (+(m[1] || 0)) * 1440 + (+m[2]) * 60 + (+m[3]) : 0; };
+  const hhmmIso = iso => { const d = new Date(iso); return pad(d.getHours()) + ":" + pad(d.getMinutes()); };
+  const minIso = iso => { const d = new Date(iso); return d.getHours() * 60 + d.getMinutes(); };
+  function lineLabel(j) {
+    const cat = String(j.category || "").toUpperCase(), num = String(j.number || "").trim();
+    const base = CAT[cat] || j.category || "Transport";
+    if (/^L\d/.test(num)) return "Léman Express " + num;
+    return num && num !== cat ? base + " " + num : base;
+  }
+  let trKey = null, trData = null, trBusy = false, trMeta = null;
+  function renderTransit(dir, atMin) {
+    const cfg = trCfg(), box = $("transit");
+    if (!cfg.home || !cfg.work || dir == null) { box.hidden = true; return; }
     box.hidden = false;
-    const from = leaveAt + (Number(tr.walk) || 0);
-    $("transit-title").textContent = `Retour · ${tr.from.replace(/^Genève,\s*/, "")} → ${tr.to.replace(/^Genève,\s*/, "")}`;
-    const key = tr.from + "|" + tr.to + "|" + from + "|" + dateKey(new Date());
-    if (key !== trKey) { trKey = key; trData = null; fetchTransit(tr, from, key); }
+    const from = dir === "aller" ? cfg.home : cfg.work, to = dir === "aller" ? cfg.work : cfg.home;
+    const t = dir === "retour" ? atMin + cfg.margin : atMin;
+    $("transit-title").textContent = dir === "aller" ? `Aller · ${short1(from)} → ${short1(to)}` : `Retour · ${short1(from)} → ${short1(to)}`;
+    const bucket = Math.floor(Date.now() / 180000); // rafraîchi toutes les 3 min (temps réel)
+    const key = [dir, from, to, t, dateKey(new Date()), bucket].join("|");
+    if (key !== trKey) { trKey = key; if (!trMeta || trMeta.dir !== dir || trMeta.t !== t) trData = null; trMeta = { dir, t }; fetchTransit(from, to, t, key); }
     const list = $("transit-list");
     if (trData === null) { list.innerHTML = `<div class="dep"><span>Recherche des horaires…</span></div>`; return; }
     if (trData.error) { list.innerHTML = `<div class="dep"><span>${esc(trData.error)}</span></div>`; return; }
-    if (!trData.length) { list.innerHTML = `<div class="dep"><span>Aucun départ trouvé après ${clock(from)}.</span></div>`; return; }
-    list.innerHTML = trData.map(d => `<div class="dep"><b class="num">${d.dep} → ${d.arr}</b><span>${esc(d.line)}${d.changes ? ` · ${d.changes} chgt` : ""}</span></div>`).join("")
-      + `<div class="dep"><span style="font-size:13px">Départ de l'arrêt dès ${clock(from)} (${tr.walk} min de marche)</span></div>`;
+    if (!trData.length) { list.innerHTML = `<div class="dep"><span>Aucun trajet trouvé après ${clock(t)}.</span></div>`; return; }
+    const first = trData[0];
+    const leave = dir === "retour" ? first.depMin - (first.startsWalking ? 0 : cfg.margin) : first.depMin;
+    const lines = cn => cn.legs.filter(l => l.kind === "ride").map(l => `<span class="chipline">${esc(l.line)}</span>`).join(`<span class="sep">›</span>`);
+    const delay = cn => cn.delay > 0 ? ` <span class="late">+${cn.delay} min</span>` : "";
+    let head;
+    if (dir === "retour") head = `<div class="tr-main"><div><span class="tr-k">Quitte le travail à</span><b class="num">${clock(leave)}</b></div><div class="tr-r"><span class="tr-k">Arrivée</span><b class="num">${first.arr}</b></div></div>`;
+    else {
+      const sched = baseFor(dateKey(new Date())), pause = sched > 330 ? state.settings.pauseMin : 0;
+      head = `<div class="tr-main"><div><span class="tr-k">Prochain départ</span><b class="num">${first.dep}</b></div><div class="tr-r"><span class="tr-k">Au travail à</span><b class="num">${first.arr}</b></div></div>`
+        + (sched ? `<div class="tr-tip">En arrivant à ${first.arr}, tu pourras partir vers <b class="num">${clock(Math.max(first.arrMin + sched + pause, state.settings.minOut ?? 0))}</b>.</div>` : "");
+    }
+    list.innerHTML = head
+      + `<div class="tr-lines">${lines(first)}${delay(first)}</div>`
+      + `<div class="tr-sub num">${first.dep} → ${first.arr} · ${hm(first.dur)}${first.transfers ? ` · ${first.transfers} changement${first.transfers > 1 ? "s" : ""}` : " · direct"}</div>`
+      + (trData.length > 1 ? `<div class="rows">${trData.slice(1).map(cn => `<div class="rowx"><span class="num">${cn.dep} → ${cn.arr}${delay(cn)}</span><span>${cn.legs.filter(l => l.kind === "ride").map(l => esc(l.line)).join(" › ")}</span></div>`).join("")}</div>` : "")
+      + `<button class="tr-more" id="tr-detail">Voir le détail</button>`;
+    $("tr-detail").onclick = () => openTransitDetail(dir, from, to);
   }
-  async function fetchTransit(tr, from, key) {
+  async function fetchTransit(from, to, t, key) {
     if (trBusy) return; trBusy = true;
-    const hhmm = iso => { const d = new Date(iso); return pad(d.getHours()) + ":" + pad(d.getMinutes()); };
     try {
-      const url = "https://transport.opendata.ch/v1/connections?from=" + encodeURIComponent(tr.from) + "&to=" + encodeURIComponent(tr.to)
-        + "&date=" + dateKey(new Date()) + "&time=" + clock(from) + "&limit=3";
+      const url = "https://transport.opendata.ch/v1/connections?from=" + encodeURIComponent(from) + "&to=" + encodeURIComponent(to)
+        + "&date=" + dateKey(new Date()) + "&time=" + clock(t) + "&limit=4";
       const r = await fetch(url);
       if (!r.ok) throw new Error("http");
       const j = await r.json();
       const out = (j.connections || []).map(cn => {
-        const sec = (cn.sections || []).find(x => x.journey) || {};
-        const jn = sec.journey || {};
-        const line = [jn.category, jn.number].filter(Boolean).join(" ") || "Transport";
-        return { dep: hhmm(cn.from.departure), arr: hhmm(cn.to.arrival), line, changes: cn.transfers || 0 };
+        const legs = (cn.sections || []).map(sc => sc.journey ? {
+          kind: "ride", line: lineLabel(sc.journey), dir: short1(sc.journey.to || ""),
+          from: short1(sc.departure && sc.departure.station && sc.departure.station.name), to: short1(sc.arrival && sc.arrival.station && sc.arrival.station.name),
+          dep: hhmmIso(sc.departure.departure), arr: hhmmIso(sc.arrival.arrival), delay: (sc.departure && sc.departure.delay) || 0,
+          platform: (sc.departure && (sc.departure.prognosis && sc.departure.prognosis.platform || sc.departure.platform)) || ""
+        } : { kind: "walk", mins: durMin(sc.walk && sc.walk.duration), to: short1(sc.arrival && sc.arrival.station && sc.arrival.station.name) });
+        return {
+          dep: hhmmIso(cn.from.departure), depMin: minIso(cn.from.departure), arr: hhmmIso(cn.to.arrival), arrMin: minIso(cn.to.arrival),
+          dur: durMin(cn.duration), transfers: cn.transfers || 0, delay: cn.from.delay || (legs.find(l => l.kind === "ride") || {}).delay || 0,
+          startsWalking: legs.length > 0 && legs[0].kind === "walk", legs
+        };
       });
       if (key === trKey) trData = out;
     } catch (e) {
-      if (key === trKey) trData = { error: navigator.onLine === false ? "Hors connexion : horaires indisponibles." : "Horaires indisponibles pour ce trajet." };
+      if (key === trKey) trData = { error: navigator.onLine === false ? "Hors connexion : horaires indisponibles." : "Trajet introuvable. Vérifie tes adresses dans Réglages → Trajets." };
     }
     trBusy = false;
     if (key === trKey && tab === "today") render();
+  }
+  function openTransitDetail(dir, from, to) {
+    if (!Array.isArray(trData)) return;
+    openSheet(`<h3>${dir === "aller" ? "Aller" : "Retour"}</h3>
+      <p class="note" style="margin:-8px 4px 0">${esc(short1(from))} → ${esc(short1(to))}</p>
+      ${trData.map(cn => `<div class="list"><div class="item"><span><b class="num">${cn.dep} → ${cn.arr}</b><small>${hm(cn.dur)} · ${cn.transfers ? cn.transfers + " changement" + (cn.transfers > 1 ? "s" : "") : "direct"}</small></span>${cn.delay > 0 ? `<span class="late">+${cn.delay} min</span>` : ""}</div>
+        ${cn.legs.map(l => l.kind === "walk" ? (l.mins ? `<div class="item leg"><span class="grow">À pied ${l.mins} min${l.to ? ` jusqu'à ${esc(l.to)}` : ""}</span></div>` : "")
+          : `<div class="item leg"><span class="grow"><b>${esc(l.line)}</b>${l.dir ? ` <small style="display:inline">direction ${esc(l.dir)}</small>` : ""}<small class="num">${l.dep} ${esc(l.from)}${l.platform ? ` · quai ${esc(l.platform)}` : ""} → ${l.arr} ${esc(l.to)}</small></span>${l.delay > 0 ? `<span class="late">+${l.delay} min</span>` : ""}</div>`).join("")}
+      </div>`).join("")}
+      <p class="note" style="margin-top:0">Horaires et retards en temps réel des transports publics suisses. Les lignes uniquement françaises peuvent manquer.</p>
+      <button class="ghost" id="trd-close">Fermer</button>`);
+    $("trd-close").onclick = closeSheet;
   }
 
   let lastMin = -1;
@@ -978,14 +1041,14 @@ header{display:flex;align-items:flex-end;justify-content:space-between;gap:12px}
         <label class="item"><span>Jours de congé par an</span><input type="number" inputmode="decimal" min="0" max="60" step="0.5" id="st-vac" value="${s.vacDays}" style="max-width:70px"></label>
         <label class="item"><span>Télétravail max par an (j)<small>Vide = pas de plafond</small></span><input type="number" inputmode="numeric" min="0" max="365" id="st-rcap" value="${s.remoteCap || ""}" style="max-width:70px"></label>
       </div>
-      <h4>Trajet retour</h4>
+      <h4>Trajets</h4>
       <div class="list">
-        <label class="item"><span>Départ</span><input type="text" id="st-from" list="dl-stops" placeholder="Arrêt près du travail" value="${esc(s.transit.from)}" autocomplete="off"></label>
-        <label class="item"><span>Arrivée</span><input type="text" id="st-to" list="dl-stops" placeholder="Arrêt ou gare" value="${esc(s.transit.to)}" autocomplete="off"></label>
-        <label class="item"><span>Marche jusqu'à l'arrêt (min)</span><input type="number" inputmode="numeric" min="0" max="60" id="st-walk" value="${s.transit.walk}" style="max-width:70px"></label>
+        <label class="item"><span>Domicile</span><input type="text" id="st-home" list="dl-stops" placeholder="Adresse ou arrêt" value="${esc(s.transit.home)}" autocomplete="off"></label>
+        <label class="item"><span>Travail</span><input type="text" id="st-work" list="dl-stops" placeholder="Adresse ou arrêt" value="${esc(s.transit.work)}" autocomplete="off"></label>
+        <label class="item"><span>Temps pour quitter le travail (min)<small>Vestiaire, badge, ascenseur…</small></span><input type="number" inputmode="numeric" min="0" max="60" id="st-margin" value="${s.transit.margin}" style="max-width:70px"></label>
       </div>
       <datalist id="dl-stops"></datalist>
-      <p class="note">Horaires des transports publics suisses, affichés d'après ton heure de sortie.</p>
+      <p class="note">Le matin, Balancier affiche le prochain départ de chez toi. En poste, il te dit quand quitter le travail pour attraper le bon transport. Horaires et retards en temps réel (CFF, TPG, Léman Express…).</p>
       <button class="cta" id="st-save">Enregistrer les réglages</button>
       <h4>Sauvegarde</h4>
       <p class="note" style="margin-top:0">Tes pointages sont enregistrés sur cet iPhone. Exporte une copie de temps en temps (dans Fichiers ou iCloud Drive).</p>
@@ -995,11 +1058,11 @@ header{display:flex;align-items:flex-end;justify-content:space-between;gap:12px}
     v.querySelectorAll("[data-tone]").forEach(b => b.onclick = () => { state.settings.tone = b.dataset.tone; saveSettings(); renderSettings(); });
     v.querySelectorAll("[data-theme]").forEach(b => b.onclick = () => { state.settings.theme = b.dataset.theme; saveSettings(); renderSettings(); });
     let acT;
-    ["st-from", "st-to"].forEach(id => $(id).addEventListener("input", e => {
+    ["st-home", "st-work"].forEach(id => $(id).addEventListener("input", e => {
       clearTimeout(acT); const q = e.target.value.trim(); if (q.length < 3) return;
       acT = setTimeout(async () => {
         try {
-          const r = await fetch("https://transport.opendata.ch/v1/locations?type=station&query=" + encodeURIComponent(q));
+          const r = await fetch("https://transport.opendata.ch/v1/locations?type=all&query=" + encodeURIComponent(q));
           const j = await r.json();
           $("dl-stops").innerHTML = (j.stations || []).filter(x => x.name).slice(0, 8).map(x => `<option value="${esc(x.name)}">`).join("");
         } catch (err) {}
@@ -1015,7 +1078,7 @@ header{display:flex;align-items:flex-end;justify-content:space-between;gap:12px}
         winStart: toMin($("st-ws").value) ?? 390, clampStart: $("st-clamp").checked,
         minOut: toMin($("st-minout").value), maxWeek: Math.round(num("st-maxw", 0) * 60),
         holidays: $("st-hol").value, vacDays: num("st-vac", 25), remoteCap: Math.round(num("st-rcap", 0)),
-        transit: { from: $("st-from").value.trim(), to: $("st-to").value.trim(), walk: Math.max(0, Math.round(num("st-walk", 10))) }
+        transit: { home: $("st-home").value.trim(), work: $("st-work").value.trim(), margin: Math.max(0, Math.round(num("st-margin", 5))) }
       };
       trKey = null; saveSettings(); toast("Réglages enregistrés");
     };
