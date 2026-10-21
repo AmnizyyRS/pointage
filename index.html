@@ -323,7 +323,16 @@ button.item:active{opacity:.5}
 .item.enter{animation:rowIn .45s var(--ease) both}
 @keyframes rowIn{from{opacity:0;transform:translateY(-6px)}}
 .steps i{transition:width .3s var(--ease),background-color .3s ease}
-@media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+/* « Réduire les animations » : pas de mouvement, seulement des fondus */
+@keyframes fadeOnly{from{opacity:0}}
+@media (prefers-reduced-motion:reduce){
+  .anim-up,.anim-l,.anim-r,.tick,.item.enter{animation-name:fadeOnly}
+  .scrim .sheet,.scrim.closing .sheet{animation-name:fadeOnly;animation-duration:.2s}
+  .scrim.closing .sheet{animation-direction:reverse}
+  .bars button,.tab.on svg,.choice.just .radio{animation:none}
+  .toast{transform:translate(-50%,0)}
+  .cta:active,.ghost:active,.rowcard:active,.choice:active{transform:none}
+}
 </style>
 </head>
 <body>
@@ -401,6 +410,7 @@ button.item:active{opacity:.5}
 <script>
 (() => {
   const LS_KEY = "pointage.v1";
+  const APP_VERSION = "1.5 · animations";
   const clone = o => JSON.parse(JSON.stringify(o));
   const FULL = { GE: 2520, FR: 2100, none: 2400 };   // temps plein par semaine (min) selon la région
   const DEFAULT_SETTINGS = {
@@ -1711,7 +1721,8 @@ button.item:active{opacity:.5}
       <div class="sect">Sauvegarde</div>
       <p class="note">Tes pointages sont enregistrés sur ce téléphone. Exporte une copie de temps en temps (dans Fichiers ou iCloud Drive).</p>
       <div class="row"><button class="ghost" id="bk-exp">Exporter</button><button class="ghost" id="bk-imp">Importer</button></div>
-      <button class="link" id="st-redo">Refaire la configuration</button>`;
+      <button class="link" id="st-redo">Refaire la configuration</button>
+      <p class="note" style="text-align:center;margin-top:-6px">Balancier. · version ${APP_VERSION}</p>`;
     $("st-prof").onclick = openProfile;
     $("st-work").onclick = () => openWork();
     $("st-redo").onclick = openOnboarding;
@@ -1779,7 +1790,13 @@ button.item:active{opacity:.5}
   setInterval(tick, 5000);
   document.addEventListener("visibilitychange", () => { if (!document.hidden) { trKey = null; render(); } });
   try { navigator.storage && navigator.storage.persist && navigator.storage.persist(); } catch (e) {}
-  if ("serviceWorker" in navigator) navigator.serviceWorker.register("sw.js").catch(() => {});
+  if ("serviceWorker" in navigator) {
+    const hadSW = !!navigator.serviceWorker.controller;
+    navigator.serviceWorker.register("sw.js", { updateViaCache: "none" }).then(r => { r.update(); document.addEventListener("visibilitychange", () => { if (!document.hidden) r.update(); }); }).catch(() => {});
+    // nouvelle version installée : on recharge une fois, en douceur
+    let reloaded = false;
+    navigator.serviceWorker.addEventListener("controllerchange", () => { if (hadSW && !reloaded && scrim.hidden && $("onb").hidden) { reloaded = true; location.reload(); } });
+  }
   window.__b = { calc, calcK, planFor, activeKey, state: () => state, showTab, openOnboarding };
 })();
 </script>
