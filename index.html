@@ -763,9 +763,10 @@ button.item:active{opacity:.5}
     const others = gaps - lunch;
     const offered = Math.min(s.offered || 0, others);
     // pause de midi non prise : déduite quand même (par défaut) ou tout le temps compte (réglage)
-    const pauseDue = needsPause && !(s.skipLunch === "count" && lunch === 0) ? Math.max(0, s.pauseMin - lunch) : 0;
+    const countAll = s.skipLunch === "count";   // « Tout compte » : le temps de midi non pris compte comme du travail
+    const pauseDue = needsPause && !countAll ? Math.max(0, s.pauseMin - lunch) : 0;
     const net = Math.max(0, raw + offered - pauseDue);
-    const remaining = t + (t > 330 ? Math.max(0, s.pauseMin - lunch) : pauseDue) - raw - offered;
+    const remaining = t + (countAll ? 0 : t > 330 ? Math.max(0, s.pauseMin - lunch) : pauseDue) - raw - offered;
     const complete = !inside && !paused;
     return {
       inside, paused, raw, gaps, lunch, offered, pauseDue, net, remaining, daily: t,
@@ -1973,7 +1974,7 @@ button.item:active{opacity:.5}
       <div class="list">
         <label class="item"><span>Pauses payées par jour (min)<small>Pauses courtes comptées comme du travail</small></span><input type="number" inputmode="numeric" min="0" max="120" id="st-off" value="${s.offered || 0}" style="max-width:70px"></label>
         <label class="item"><span>Pause de midi minimum (min)<small>Non payée, déduite si elle est plus courte</small></span><input type="number" inputmode="numeric" min="0" max="180" id="st-pause" value="${s.pauseMin}" style="max-width:70px"></label>
-        <label class="item"><span>Midi sautée<small>Si tu ne prends pas de pause de midi</small></span><select id="st-skip"><option value="deduct" ${s.skipLunch !== "count" ? "selected" : ""}>Déduite quand même</option><option value="count" ${s.skipLunch === "count" ? "selected" : ""}>Tout compte</option></select></label>
+        <label class="item"><span>Midi sautée<small>Si ta pause de midi fait moins de ${s.pauseMin} min</small></span><select id="st-skip"><option value="deduct" ${s.skipLunch !== "count" ? "selected" : ""}>Déduite quand même</option><option value="count" ${s.skipLunch === "count" ? "selected" : ""}>Tout compte</option></select></label>
         ${isFlex() ? `<label class="item"><span>Compter seulement dès ${clock(s.winStart)}<small>Les minutes avant la plage ne comptent pas</small></span><input type="checkbox" class="toggle" id="st-clamp" ${s.clampStart ? "checked" : ""}></label>` : ""}
         ${F ? "" : `<label class="item"><span>Maximum par semaine (h)</span><input type="number" inputmode="decimal" min="0" max="80" step="0.5" id="st-maxw" value="${s.maxWeek ? s.maxWeek / 60 : ""}" style="max-width:70px"></label>`}
       </div>
