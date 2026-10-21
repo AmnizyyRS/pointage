@@ -107,6 +107,9 @@ svg.i{width:20px;height:20px;fill:none;stroke:currentColor;stroke-width:1.9;stro
 .dc-foot span:last-child{text-align:right}
 .nudge{margin:12px 0 0;background:var(--grey-soft);border-radius:12px;padding:8px 12px;font-size:13px;font-weight:500}
 .nudge.warn{background:var(--warn-soft);color:var(--warn)}
+.alert{display:flex;flex-direction:column;gap:12px}
+.al-top{display:flex;align-items:center;gap:12px}
+.cta.sm,.ghost.sm{height:42px;font-size:15px}
 .proj{margin-top:14px;border-top:1px solid var(--sep);padding-top:12px;display:flex;flex-direction:column;gap:6px}
 .prow{display:flex;justify-content:space-between;align-items:center;gap:10px;font-size:14px;color:var(--muted)}
 .prow > span:first-child{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
@@ -482,6 +485,8 @@ button.item:active{opacity:.5}
       <button class="act" id="act-fix"><i></i><span>Corriger</span></button>
     </section>
 
+    <section class="card alert" id="alert" aria-live="polite" hidden></section>
+
     <section class="card" aria-live="polite">
       <div class="dc-top"><div><span class="k" id="dc-k"></span><b class="num" id="dc-v">--:--</b></div><span class="dc-r num" id="dc-r"></span></div>
       <div class="track" id="dc-track" aria-hidden="true"><i id="fill"></i><em id="knob"></em></div>
@@ -524,7 +529,7 @@ button.item:active{opacity:.5}
 <script>
 (() => {
   const LS_KEY = "pointage.v1";
-  const APP_VERSION = "1.9 · correctifs";
+  const APP_VERSION = "2.0 · règles par journée, oublis, sauvegarde";
   const clone = o => JSON.parse(JSON.stringify(o));
   const FULL = { GE: 2520, FR: 2100, none: 2400 };   // temps plein par semaine (min) selon la région
   const DEFAULT_SETTINGS = {
@@ -540,9 +545,10 @@ button.item:active{opacity:.5}
     pauseMin: 30, offered: 0, skipLunch: "deduct", winStart: 390, clampStart: false, minOut: null,
     accent: "violet", accentV: 2, theme: "auto", holidays: "GE",
     vacDays: 25, maxWeek: 2700, remoteCap: 0,
-    transit: { home: "", work: "", margin: 5 }
+    transit: { home: "", work: "", margin: 5 },
+    lastExport: null, backupSnooze: null                // sauvegarde : date du dernier export, rappel repoussé jusqu'à
   };
-  let state = { settings: clone(DEFAULT_SETTINGS), days: {} };
+  let state = { settings: clone(DEFAULT_SETTINGS), days: {}, past: [] };
 
   // ---------- helpers ----------
   const NB = " ";
@@ -625,6 +631,8 @@ button.item:active{opacity:.5}
     half: !!(v && v.half), remote: !!(v && v.remote), pause: !!(v && v.pause), shift: (v && v.shift) || null
   });
   const meaningful = r => r.punches.length || r.type !== "work" || r.remote || r.shift;
+  const normPast = a => (Array.isArray(a) ? a : []).filter(p => p && /^\d{4}-\d{2}-\d{2}$/.test(p.until) && p.rules && typeof p.rules === "object")
+    .map(p => ({ until: p.until, rules: p.rules })).sort((a, b) => a.until < b.until ? -1 : 1);
 
   const ACCENTS = {
     violet: { name: "Violet", light: ["#6B4EFF", "#EFEBFF", "#4B32C8", "#FFFFFF"], dark: ["#8E7BFF", "rgba(142,123,255,.2)", "#B9ADFF", "#FFFFFF"] },
@@ -654,7 +662,7 @@ button.item:active{opacity:.5}
     if (c && c.days) {
       const days = {};
       Object.keys(c.days).forEach(k => { const r = norm(c.days[k]); if (meaningful(r)) days[k] = r; });
-      state = { settings: migrateSettings(c.settings, true), days };
+      state = { settings: migrateSettings(c.settings, true), days, past: normPast(c.past) };
     }
   } catch (e) {}
   const lsWrite = () => { try { localStorage.setItem(LS_KEY, JSON.stringify(state)); } catch (e) { toast("Enregistrement impossible sur ce téléphone : exporte une sauvegarde dans Réglages."); } };
@@ -698,14 +706,55 @@ button.item:active{opacity:.5}
     return (holCache[key] = H);
   }
   const holidaysFor = y => holidaysOf(state.settings.holidays, y);
-  const holidayName = k => holidaysFor(+k.slice(0, 4))[k] || null;
+  const holidayName = k => holidaysOf(rulesFor(k).holidays, +k.slice(0, 4))[k] || null;
+
+  // ---------- règles de calcul de chaque jour ----------
+  // Changer un réglage ne réécrit pas le passé : state.past garde les règles d'avant, chacune jusqu'à sa date de fin (until, triées).
+  const RULE_KEYS = ["type", "sched", "rate", "fixed", "shifts", "rotation", "rotAnchor", "days", "forfaitDays", "pauseMin", "offered", "skipLunch", "winStart", "clampStart", "holidays"];
+  const rulesOf = s => clone(Object.fromEntries(RULE_KEYS.map(key => [key, s[key] ?? null])));
+  const rulesFor = k => { const p = state.past.find(x => k <= x.until); return p ? { ...state.settings, ...p.rules } : state.settings; };
+  // après un changement de réglages : à partir d'aujourd'hui (les journées passées gardent les règles d'avant),
+  // ou aussi pour le passé (correction d'une erreur de réglage)
+  function keepPast(before, fromToday) {
+    const after = rulesOf(state.settings), changed = RULE_KEYS.filter(key => JSON.stringify(before[key]) !== JSON.stringify(after[key]));
+    if (!changed.length) return;
+    if (fromToday) {
+      const y = dateKey(addDays(new Date(), -1));
+      if (!state.past.some(p => p.until === y)) { state.past.push({ until: y, rules: before }); state.past.sort((a, b) => a.until < b.until ? -1 : 1); }
+    } else state.past.forEach(p => changed.forEach(key => { p.rules[key] = clone(after[key]); }));
+  }
+  const rulesChanged = before => JSON.stringify(before) !== JSON.stringify(rulesOf(state.settings));
+  const hasPastDays = () => { const tk = dateKey(new Date()); return Object.keys(state.days).some(k => k < tk); };
+  // enregistre des réglages : change() modifie state.settings (relu à chaque appel) ; si le calcul change
+  // et qu'il y a déjà des journées passées, on demande d'abord à partir de quand
+  function saveRules(change, done) {
+    const backup = clone(state.settings), before = rulesOf(state.settings);
+    change();
+    if (!rulesChanged(before) || !hasPastDays()) { lsWrite(); done(); return; }
+    state.settings = backup;
+    askWhen(fromToday => { change(); keepPast(before, fromToday); lsWrite(); done(); });
+  }
+  // demande à partir de quand appliquer de nouveaux réglages ; apply(fromToday) les enregistre
+  function askWhen(apply) {
+    openSheet(`<h3>À partir de quand ?</h3>
+      <p class="note" style="margin-top:-8px">Tes nouveaux réglages changent le calcul de tes heures.</p>
+      <div class="choices">
+        <button class="choice on" data-when="today"><span class="it-m"><b>À partir d'aujourd'hui</b><small>Tes journées passées gardent leurs règles et ton compteur ne bouge pas.</small></span><span class="radio"></span></button>
+        <button class="choice" data-when="all"><span class="it-m"><b>Aussi pour le passé</b><small>Seulement pour corriger un réglage qui était faux : tout ton compteur est recalculé.</small></span><span class="radio"></span></button>
+      </div>
+      <div class="row"><button class="ghost" id="aw-cancel">Annuler</button><button class="cta" id="aw-ok">Enregistrer</button></div>`);
+    let when = "today";
+    scrim.querySelectorAll("[data-when]").forEach(b => b.onclick = () => { when = b.dataset.when; scrim.querySelectorAll("[data-when]").forEach(x => x.classList.toggle("on", x === b)); });
+    $("aw-cancel").onclick = closeSheet;
+    $("aw-ok").onclick = () => { closeSheet(); apply(when === "today"); };
+  }
 
   // ---------- planning selon le profil ----------
-  const isFlex = () => ["variable", "partiel"].includes(state.settings.type);
-  const isForfait = () => state.settings.type === "forfait";
-  const netOf = amp => Math.max(0, amp - (amp > 330 + state.settings.pauseMin ? state.settings.pauseMin : 0));
+  const isFlex = (s = state.settings) => ["variable", "partiel"].includes(s.type);
+  const isForfait = (s = state.settings) => s.type === "forfait";
+  const netOf = (amp, s = state.settings) => Math.max(0, amp - (amp > 330 + s.pauseMin ? s.pauseMin : 0));
   function shiftFor(k, rec) {
-    const s = state.settings, dow = parseKey(k).getDay();
+    const s = rulesFor(k), dow = parseKey(k).getDay();
     if (rec && rec.shift) return rec.shift === "off" ? null : s.shifts.find(x => x.id === rec.shift) || null;
     if (!s.days[dow] || !s.rotation.length) return null;
     const anchor = s.rotAnchor ? parseKey(s.rotAnchor) : mondayOf(new Date());
@@ -715,16 +764,16 @@ button.item:active{opacity:.5}
   }
   // plan du jour : durée nette à faire (net), et pour fixe/équipes l'horaire prévu (start/end en minutes, end > 1440 si la nuit passe minuit)
   function planFor(k, rec) {
-    const s = state.settings, dow = parseKey(k).getDay();
+    const s = rulesFor(k), dow = parseKey(k).getDay();
     if (rec === undefined) rec = state.days[k];
-    if (s.type === "fixe") { const f = s.fixed[dow]; if (!f) return { net: 0 }; const e = f.e > f.s ? f.e : f.e + 1440; return { start: f.s, end: e, net: netOf(e - f.s) }; }
-    if (s.type === "equipes") { const sh = shiftFor(k, rec); if (!sh) return { net: 0, shift: null }; const e = sh.e > sh.s ? sh.e : sh.e + 1440; return { start: sh.s, end: e, net: netOf(e - sh.s), shift: sh }; }
+    if (s.type === "fixe") { const f = s.fixed[dow]; if (!f) return { net: 0 }; const e = f.e > f.s ? f.e : f.e + 1440; return { start: f.s, end: e, net: netOf(e - f.s, s) }; }
+    if (s.type === "equipes") { const sh = shiftFor(k, rec); if (!sh) return { net: 0, shift: null }; const e = sh.e > sh.s ? sh.e : sh.e + 1440; return { start: sh.s, end: e, net: netOf(e - sh.s, s), shift: sh }; }
     if (s.type === "forfait") return { net: s.days[dow] ? 1 : 0 };
     return { net: s.sched[dow] || 0 };
   }
   const baseFor = k => planFor(k).net;
   function targetFor(k, rec) {
-    if (isForfait()) return 0;
+    if (isForfait(rulesFor(k))) return 0;
     const base = planFor(k, rec || null).net;
     const type = rec ? rec.type : "work";
     if (type === "ferie" || (holidayName(k) && type === "work")) return 0;
@@ -741,7 +790,7 @@ button.item:active{opacity:.5}
 
   // ---------- calcul ----------
   function calc(rec, live, k) {
-    const s = state.settings, n = nowRel(k);
+    const s = rulesFor(k), n = nowRel(k);
     if (!rec) return null;
     const t = targetFor(k, rec);
     const p = (rec.punches || []).map(toMin);
@@ -749,7 +798,7 @@ button.item:active{opacity:.5}
       if (rec.type === "work") return null;
       return { inside: false, raw: 0, gaps: 0, lunch: 0, offered: 0, pauseDue: 0, net: 0, remaining: t, daily: t, first: null, last: null, target: null, complete: true, balance: -t, absence: true };
     }
-    if (s.clampStart && isFlex()) p[0] = Math.max(p[0], s.winStart);
+    if (s.clampStart && isFlex(s)) p[0] = Math.max(p[0], s.winStart);
     let raw = 0, gaps = 0; const gapList = [];
     for (let i = 0; i < p.length; i += 2) {
       const a = p[i], b = i + 1 < p.length ? p[i + 1] : (live ? n : null);
@@ -759,12 +808,14 @@ button.item:active{opacity:.5}
     const inside = p.length % 2 === 1;
     const paused = !inside && live && !!rec.pause;
     const needsPause = t > 330 || raw > 330;
-    // la plus longue pause = pause de midi (non payée, minimum pauseMin) ; les autres sont offertes jusqu'à s.offered min
-    const lunch = needsPause && gapList.length ? Math.max(...gapList) : 0;
-    const others = gaps - lunch;
-    const offered = Math.min(s.offered || 0, others);
     // pause de midi non prise : déduite quand même (par défaut) ou tout le temps compte (réglage)
     const countAll = s.skipLunch === "count";   // « Tout compte » : le temps de midi non pris compte comme du travail
+    // la plus longue pause = pause de midi (non payée, minimum pauseMin) ; les autres sont offertes jusqu'à s.offered min.
+    // « Tout compte » : une pause qui tient dans les pauses payées reste payée, même sans pause de midi (le café de 20 min)
+    const longest = gapList.length ? Math.max(...gapList) : 0;
+    const lunch = needsPause && longest > (countAll ? s.offered || 0 : 0) ? longest : 0;
+    const others = gaps - lunch;
+    const offered = Math.min(s.offered || 0, others);
     const pauseDue = needsPause && !countAll ? Math.max(0, s.pauseMin - lunch) : 0;
     const net = Math.max(0, raw + offered - pauseDue);
     const remaining = t + (countAll ? 0 : t > 330 ? Math.max(0, s.pauseMin - lunch) : pauseDue) - raw - offered;
@@ -1027,6 +1078,7 @@ button.item:active{opacity:.5}
     else renderTransit(null);
 
     renderActivity(ak, rec, c, planned, onPause, plan);
+    renderAlert(ak);
     // totaux du jour
     const dt = $("day-tiles");
     if (c && !c.absence && pun.length) {
@@ -1075,6 +1127,51 @@ button.item:active{opacity:.5}
     if (newRow) { newRow = false; const f = box.querySelector(".item"); if (f) f.classList.add("enter"); }
   }
   $("activity").addEventListener("click", e => { if (e.target.closest("[data-edit]")) openDay(activeKey()); });
+
+  // ---------- alertes : sortie oubliée, sauvegarde ----------
+  const daysSince = k => Math.round((parseKey(dateKey(new Date())) - parseKey(k)) / 864e5);
+  // la plus récente journée des 14 derniers jours restée ouverte (une entrée sans sortie) : elle manque au compteur
+  function forgotten(ak) {
+    for (let i = 1; i <= 14; i++) { const k = dateKey(addDays(parseKey(ak), -i)), r = state.days[k]; if (r && r.punches.length % 2 === 1) return k; }
+    return null;
+  }
+  // heure de sortie probable : ta sortie habituelle (moyenne des 20 dernières journées), sinon l'heure où tes heures étaient faites
+  function guessOut(k) {
+    const r = state.days[k], last = toMin(r.punches[r.punches.length - 1]), outs = [];
+    Object.keys(state.days).filter(x => x < k).sort().reverse().some(x => { const c = calcK(x, null); if (c && c.complete && !c.absence && state.days[x].punches.length >= 2) outs.push(c.last); return outs.length >= 20; });
+    const usual = outs.length ? outs.reduce((a, b) => a + b, 0) / outs.length : null;
+    const c = calc(r, false, k), done = last + Math.max(0, c.remaining) + c.lunchLeft;
+    const m = usual != null && usual > last + 15 ? usual : done > last ? done : last + 60;
+    return Math.round(m / 5) * 5;
+  }
+  function renderAlert(ak) {
+    const box = $("alert"), s = state.settings, tk = dateKey(new Date());
+    const k = forgotten(ak);
+    if (k) {
+      const r = state.days[k], last = toMin(r.punches[r.punches.length - 1]), out = guessOut(k);
+      const c = calc({ ...r, punches: [...r.punches, hhmm(out)] }, false, k);
+      const what = r.punches.length === 1 ? "Entrée" : "Reprise";
+      box.innerHTML = `<div class="al-top"><span class="ico orange">${ic("out")}</span><span class="it-m"><b>Sortie oubliée ${longDate(parseKey(k))}</b><small>${what} à ${clock(last)}, puis plus rien. Tu es parti vers ${clock(out)} ?${isForfait(rulesFor(k)) ? "" : ` Ça ferait ${signed(c.balance)} ce jour-là.`}</small></span></div>
+        <div class="row"><button class="ghost sm" id="al-edit">Autre heure</button><button class="cta sm" id="al-ok">Oui, ${clock(out)}</button></div>`;
+      box.hidden = false;
+      $("al-edit").onclick = () => openDay(k);
+      $("al-ok").onclick = () => { const before = clone(r); saveDay(k, { ...r, pause: false, punches: [...r.punches, hhmm(out)] }); toast(`Sortie du ${short(parseKey(k))} à ${clock(out)}`, () => saveDay(k, before)); };
+      return;
+    }
+    // rappel de sauvegarde : jamais exporté après une semaine de pointages, ou dernière copie il y a plus de 14 jours
+    const keys = Object.keys(state.days).sort();
+    const age = s.lastExport ? daysSince(s.lastExport) : null;
+    const due = keys.length >= 5 && (age == null ? daysSince(keys[0]) >= 7 : age >= 14) && !(s.backupSnooze && s.backupSnooze > tk);
+    if (due) {
+      box.innerHTML = `<div class="al-top"><span class="ico violet">${ic("share")}</span><span class="it-m"><b>Sauvegarde tes pointages</b><small>${age == null ? "Tu n'as encore jamais fait de copie." : `Dernière copie il y a ${plural(age, "jour")}.`} Tout est sur ce téléphone : si tu supprimes l'appli, tout est perdu.</small></span></div>
+        <div class="row"><button class="ghost sm" id="al-later">Plus tard</button><button class="cta sm" id="al-exp">Exporter</button></div>`;
+      box.hidden = false;
+      $("al-later").onclick = () => { s.backupSnooze = dateKey(addDays(new Date(), 7)); saveSettings(); };
+      $("al-exp").onclick = exportBackup;
+      return;
+    }
+    box.hidden = true; box.innerHTML = "";
+  }
 
   // ---------- trajets domicile <-> travail (transport.opendata.ch) ----------
   const trCfg = () => { const t = state.settings.transit || {}; return { home: t.home || "", work: t.work || "", margin: t.margin ?? 5 }; };
@@ -1498,6 +1595,12 @@ button.item:active{opacity:.5}
     lines.push(["Total", "", "", "", "", "", F ? nd + " jours" : "", "", F ? "" : sgn(tot)].join(";"));
     shareFile(`balancier-${y}-${pad(m + 1)}.csv`, "﻿" + lines.join("\n"), "text/csv");
   }
+  async function exportBackup() {
+    const ok = await shareFile("balancier-" + dateKey(new Date()) + ".json", JSON.stringify(state, null, 1), "application/json");
+    if (!ok) return;
+    state.settings.lastExport = dateKey(new Date()); state.settings.backupSnooze = null;
+    saveSettings(); if (tab === "set") keepForm(renderSettings);
+  }
   async function shareFile(name, text, type) {
     const blob = new Blob([text], { type });
     try {
@@ -1748,7 +1851,7 @@ button.item:active{opacity:.5}
       const root = sheetEl();
       bindDetails(root, d, draw);
       $("wk-cancel").onclick = closeSheet;
-      $("wk-save").onclick = () => { const e = checkDraft(d); if (e) { $("wk-err").textContent = e; $("wk-err").hidden = false; return; } applyDraft(d); closeSheet(); render(); renderSettings(); toast("Horaires enregistrés"); };
+      $("wk-save").onclick = () => { const e = checkDraft(d); if (e) { $("wk-err").textContent = e; $("wk-err").hidden = false; return; } saveRules(() => applyDraft(d), () => { closeSheet(); render(); renderSettings(); toast("Horaires enregistrés"); }); };
     });
     draw();
   }
@@ -1767,7 +1870,10 @@ button.item:active{opacity:.5}
     let region = s.holidays;
     scrim.querySelectorAll("[data-region]").forEach(b => b.onclick = () => { region = b.dataset.region; scrim.querySelectorAll("[data-region]").forEach(x => x.classList.toggle("on", x === b)); });
     $("pf-cancel").onclick = closeSheet;
-    $("pf-save").onclick = () => { Object.assign(s, { name: $("pf-first").value.trim(), lastName: $("pf-last").value.trim(), company: $("pf-co").value.trim(), holidays: region }); lsWrite(); closeSheet(); render(); renderSettings(); toast("Profil enregistré"); };
+    $("pf-save").onclick = () => {
+      const vals = { name: $("pf-first").value.trim(), lastName: $("pf-last").value.trim(), company: $("pf-co").value.trim(), holidays: region };
+      saveRules(() => Object.assign(state.settings, vals), () => { closeSheet(); render(); renderSettings(); toast("Profil enregistré"); });
+    };
   }
 
   // ---------- accueil (premier lancement) : une conversation ----------
@@ -1882,7 +1988,9 @@ button.item:active{opacity:.5}
       return `<div class="recap">${lines.map(([a, b]) => `<div><span>${a}</span><b>${b}</b></div>`).join("")}</div><small>Tout se modifie ensuite dans Réglages.</small>`;
     }
     function finish() {
+      const before = rulesOf(state.settings);
       applyDraft(d);
+      if (hasPastDays()) { keepPast(before, true); lsWrite(); }   // refaire la configuration ne réécrit pas le passé
       box.classList.add("leaving");
       setTimeout(() => { box.hidden = true; box.classList.remove("leaving", "chatmode"); box.innerHTML = ""; showTab("today"); toast(`Bienvenue, ${d.name.trim()} !`); }, reduce ? 0 : 320);
       return "stay";
@@ -2015,7 +2123,7 @@ button.item:active{opacity:.5}
         <div class="swatches" style="border-top:1px solid var(--sep)">${Object.keys(ACCENTS).map(k => `<button class="sw${s.accent === k ? " on" : ""}" data-accent="${k}"><i style="background:${ACCENTS[k][mode][0]}"></i>${ACCENTS[k].name}</button>`).join("")}</div>
       </div>
       <div class="sect">Sauvegarde</div>
-      <p class="note">Tes pointages sont enregistrés sur ce téléphone. Exporte une copie de temps en temps (dans Fichiers ou iCloud Drive).</p>
+      <p class="note">Tes pointages sont enregistrés sur ce téléphone. Exporte une copie de temps en temps (dans Fichiers ou iCloud Drive). <b>${s.lastExport ? `Dernière copie : ${daysSince(s.lastExport) ? `il y a ${plural(daysSince(s.lastExport), "jour")}` : "aujourd'hui"}.` : "Aucune copie pour l'instant."}</b></p>
       <div class="row"><button class="ghost" id="bk-exp">Exporter</button><button class="ghost" id="bk-imp">Importer</button></div>
       <button class="link" id="st-redo">Refaire la configuration</button>
       <p class="note" style="text-align:center;margin-top:-6px">Balancier. · version ${APP_VERSION}</p>`;
@@ -2038,17 +2146,17 @@ button.item:active{opacity:.5}
     }));
     $("st-save").onclick = () => {
       const num = (id, def) => { const el = $(id); if (!el) return def; const val = parseFloat(String(el.value).replace(",", ".")); return isNaN(val) ? def : val; };
-      Object.assign(state.settings, {
+      const vals = {
         pauseMin: Math.max(0, Math.round(num("st-pause", 30))), offered: Math.max(0, Math.round(num("st-off", 0))),
         skipLunch: $("st-skip").value,
         clampStart: $("st-clamp") ? $("st-clamp").checked : s.clampStart,
         maxWeek: $("st-maxw") ? Math.round(num("st-maxw", 0) * 60) : s.maxWeek,
         holidays: $("st-hol").value, vacDays: num("st-vac", 25), remoteCap: Math.round(num("st-rcap", 0)),
         transit: { home: $("st-home").value.trim(), work: $("st-work-addr").value.trim(), margin: Math.max(0, Math.round(num("st-margin", 5))) }
-      });
-      trKey = null; saveSettings(); renderSettings(); toast("Réglages enregistrés");
+      };
+      saveRules(() => Object.assign(state.settings, vals), () => { trKey = null; render(); renderSettings(); toast("Réglages enregistrés"); });
     };
-    $("bk-exp").onclick = () => shareFile("balancier-" + dateKey(new Date()) + ".json", JSON.stringify(state, null, 1), "application/json");
+    $("bk-exp").onclick = exportBackup;
     $("bk-imp").onclick = () => $("imp-any").click();
   }
   $("imp-any").onchange = e => {
@@ -2060,7 +2168,7 @@ button.item:active{opacity:.5}
         if (!data || typeof data.days !== "object") throw 0;
         let n = 0;
         Object.keys(data.days).forEach(k => { if (/^\d{4}-\d{2}-\d{2}$/.test(k)) { const r = norm(data.days[k]); if (meaningful(r)) { state.days[k] = r; n++; } } });
-        if (data.settings) state.settings = migrateSettings(data.settings, true);
+        if (data.settings) { state.settings = migrateSettings(data.settings, true); state.past = normPast(data.past); }
         state.settings.onboarded = true;
         lsWrite();
         $("onb").hidden = true; $("onb").innerHTML = ""; $("onb").classList.remove("chatmode");

@@ -25,7 +25,9 @@ Balancier. est une appli de pointage **pour le salarié** (pas pour l'employeur)
 
 ## Données (localStorage, clé `pointage.v1`)
 
-`state = { settings, days }`. Tout reste sur le téléphone ; sauvegarde par Exporter/Importer (JSON) dans Réglages. Toujours passer par `migrateSettings()` et `norm()` pour rester compatible avec les anciennes données.
+`state = { settings, days, past }`. Tout reste sur le téléphone ; sauvegarde par Exporter/Importer (JSON) dans Réglages. Toujours passer par `migrateSettings()`, `norm()` et `normPast()` pour rester compatible avec les anciennes données.
+
+**Règles par journée** `past: [{ until: "AAAA-MM-JJ", rules: {...} }]` (trié) : changer un réglage de calcul (`RULE_KEYS`) ne réécrit pas le passé. `rulesFor(k)` donne les règles du jour k (la première entrée avec `k <= until`, sinon `settings`). Tout enregistrement de réglages passe par `saveRules(change, done)`, qui demande « À partir d'aujourd'hui » (ajoute une entrée jusqu'à hier) ou « Aussi pour le passé » (corrige toutes les entrées). Dans `calc`, `planFor`, `targetFor`, `shiftFor`, `holidayName` : toujours `rulesFor(k)`, jamais `state.settings`.
 
 **Journée** `days["AAAA-MM-JJ"]` : `{ punches: ["07:12","12:14",...], type: "work|conge|rtt|maladie|recup|ferie", half, remote, pause, shift }`
 - Pointages en alternance entrée/sortie. `pause: true` = la dernière sortie est une pause en cours (la journée n'est pas finie).
@@ -39,7 +41,7 @@ Balancier. est une appli de pointage **pour le salarié** (pas pour l'employeur)
 - Travail brut = somme des plages entrée→sortie (jusqu'à maintenant si la journée est en cours).
 - La **plus longue pause** = pause de midi, non payée, minimum `pauseMin`.
   - `skipLunch: "deduct"` : s'il manque des minutes de midi, elles sont déduites.
-  - `skipLunch: "count"` (cas d'Alex) : le temps de midi non pris compte comme du travail.
+  - `skipLunch: "count"` (cas d'Alex) : le temps de midi non pris compte comme du travail. Une pause qui tient dans `offered` reste payée même sans midi (le café de 20 min) : la plus longue pause n'est la pause de midi que si elle dépasse `offered`. Dans l'heure de sortie prévue, la pause de midi pas encore prise est ajoutée (`lunchLeft`).
 - Les autres pauses sont **payées** jusqu'à `offered` minutes par jour.
 - `net = brut + offertes − midi manquant` ; `solde = net − dû`.
 - Dû du jour : `targetFor()` via `planFor()` selon le profil ; 0 si férié, congé, RTT, maladie (moitié si demi-journée).
@@ -54,6 +56,7 @@ Profil de référence (Alex) : horaire variable, 42 h sur lun–ven (8 h 24/jour
 
 - Rendu : `render()` → `renderToday()` / `renderTrack()` / `renderAbs()` / `renderSettings()` selon l'onglet.
 - Aujourd'hui : compteur + courbe 30 jours, 4 actions rondes (Entrée/Sortie/Reprise, Pause/Terminer, Absence, Corriger), carte « Sortie possible », projection « Si tu sors à », trajet, totaux Travail/Pauses/Compté, activité du jour façon relevé bancaire.
+- Carte d'alerte (`renderAlert()`) sous les boutons : sortie oubliée des 14 derniers jours (`forgotten()`, heure proposée par `guessOut()` = sortie habituelle ou heures faites), sinon rappel de sauvegarde (jamais exporté après 7 jours, ou dernière copie > 14 jours ; `settings.lastExport`, `settings.backupSnooze`). Export JSON par `exportBackup()`.
 - Fenêtres : `openSheet()` / `closeSheet()` (glisser vers le bas pour fermer, classes `settled`, `closing`, `dragging`). `openDay()` (corriger une journée), `openRange()` (poser une absence), `openWork()` (type d'horaires), `openProfile()`.
 - Accueil : `openOnboarding()` = conversation façon messagerie, questions définies dans `steps()` selon le profil, retour en arrière par `marks[]`.
 - Profil partagé accueil/réglages : `draftFrom()`, `applyDraft()`, `detailsHTML()`, `bindDetails()`, `checkDraft()`.
