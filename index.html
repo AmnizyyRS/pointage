@@ -277,6 +277,52 @@ details.more[open] summary{border-bottom:1px solid var(--sep)}
 .avatar{width:48px;height:48px;border-radius:24px;background:var(--accent-soft);color:var(--accent-ink);display:flex;align-items:center;justify-content:center;font-weight:700;font-size:17px;flex:none}
 .link{border:0;background:none;color:var(--accent-ink);font-weight:600;font-size:15px;padding:8px;align-self:center}
 .unit{font-size:.5em;color:var(--muted);letter-spacing:-.01em;font-weight:600}
+/* mouvement : court, doux, jamais tape-à-l'œil */
+:root{--ease:cubic-bezier(.22,.8,.24,1)}
+.anim-up{animation:viewUp .34s var(--ease) both}
+.anim-l{animation:viewL .3s var(--ease) both}
+.anim-r{animation:viewR .3s var(--ease) both}
+@keyframes viewUp{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+@keyframes viewL{from{opacity:0;transform:translateX(-16px)}to{opacity:1;transform:none}}
+@keyframes viewR{from{opacity:0;transform:translateX(16px)}to{opacity:1;transform:none}}
+.tick{animation:tick .38s var(--ease)}
+@keyframes tick{from{opacity:.2;transform:translateY(7px)}to{opacity:1;transform:none}}
+.dc-r{display:inline-block}
+.scrim{animation:scrimIn .28s ease both}
+.scrim .sheet{animation:sheetUp .42s var(--ease) both;will-change:transform}
+.scrim.closing{animation:scrimOut .24s ease both}
+.scrim.closing .sheet{animation:sheetDown .26s cubic-bezier(.4,0,1,1) both}
+.scrim.dragging .sheet{animation:none;transition:none}
+.sheet.snap{transition:transform .3s var(--ease)}
+@keyframes scrimIn{from{background-color:transparent}}
+@keyframes scrimOut{to{background-color:transparent}}
+@keyframes sheetUp{from{transform:translateY(100%)}to{transform:none}}
+@keyframes sheetDown{from{transform:translateY(var(--dy,0))}to{transform:translateY(100%)}}
+.toast{opacity:0;transform:translate(-50%,-14px) scale(.96);pointer-events:none;transition:opacity .25s ease,transform .38s var(--ease)}
+.toast.show{opacity:1;transform:translate(-50%,0) scale(1);pointer-events:auto}
+/* retour au toucher */
+.cta,.ghost,.rowcard,.choice,.iconbtn,.pill,.chip,.days button,.sw,.x,.status{transition:transform .18s var(--ease),background-color .2s ease,color .2s ease,border-color .2s ease,opacity .2s ease}
+.cta:active,.ghost:active,.iconbtn:active,.pill:active,.chip:active,.days button:active,.x:active{transform:scale(.96)}
+.rowcard:active,.choice:active{transform:scale(.985)}
+button.item{transition:opacity .15s ease}
+button.item:active{opacity:.5}
+.tab svg{transition:transform .3s var(--ease)}
+.tab:active svg{transform:scale(.88)}
+.tab.on svg{animation:tabPop .4s var(--ease)}
+@keyframes tabPop{40%{transform:scale(1.14)}}
+.radio{transition:border-width .22s var(--ease),border-color .2s ease}
+.choice.just .radio{animation:radioIn .3s var(--ease)}
+@keyframes radioIn{from{border-width:2px}}
+.seg{position:relative}
+.seg::before{content:"";position:absolute;top:2px;bottom:2px;left:2px;width:calc((100% - 4px) / var(--n,2));border-radius:8px;background:var(--card);box-shadow:0 1px 3px rgba(0,0,0,.1);transform:translateX(calc(100% * var(--k,0)));transition:transform .34s var(--ease)}
+:root[data-theme="dark"] .seg::before{background:#636366}
+.seg button{position:relative;z-index:1;transition:color .2s ease}
+.seg button.on,:root[data-theme="dark"] .seg button.on{background:none;box-shadow:none}
+.bars button{transform-origin:bottom;animation:grow .55s var(--ease) both}
+@keyframes grow{from{transform:scaleY(.15);opacity:.3}}
+.item.enter{animation:rowIn .45s var(--ease) both}
+@keyframes rowIn{from{opacity:0;transform:translateY(-6px)}}
+.steps i{transition:width .3s var(--ease),background-color .3s ease}
 @media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
 </style>
 </head>
@@ -350,7 +396,7 @@ details.more[open] summary{border-bottom:1px solid var(--sep)}
 <div class="onb" id="onb" hidden></div>
 <input type="file" id="imp-any" accept="application/json,.json" hidden>
 <div class="scrim" id="scrim" hidden></div>
-<div class="toast" id="toast" hidden><span id="toast-msg"></span><button id="toast-undo" hidden>Annuler</button></div>
+<div class="toast" id="toast" role="status" aria-live="polite"><span id="toast-msg"></span><button id="toast-undo" hidden>Annuler</button></div>
 
 <script>
 (() => {
@@ -620,6 +666,12 @@ details.more[open] summary{border-bottom:1px solid var(--sep)}
   // ---------- onglets ----------
   const $ = id => document.getElementById(id);
   let tab = "today";
+  const animIn = (el, cls) => { if (!el) return; el.classList.remove("anim-up", "anim-l", "anim-r"); void el.offsetWidth; el.classList.add(cls); };
+  const tickIf = (el, before) => { if (el && el.textContent !== before) { el.classList.remove("tick"); void el.offsetWidth; el.classList.add("tick"); } };
+  const segPrev = {};
+  const segHTML = (id, items, active, attr) => { const k = Math.max(0, items.findIndex(([v]) => v === active)); return `<div class="seg" role="tablist" data-seg="${id}" data-k="${k}" style="--n:${items.length};--k:${segPrev[id] ?? k}">${items.map(([v, l]) => `<button ${attr}="${v}" class="${v === active ? "on" : ""}" role="tab" aria-selected="${v === active}">${l}</button>`).join("")}</div>`; };
+  const slideSegs = root => root.querySelectorAll(".seg[data-seg]").forEach(sg => { void sg.offsetWidth; requestAnimationFrame(() => { sg.style.setProperty("--k", sg.dataset.k); segPrev[sg.dataset.seg] = +sg.dataset.k; }); });
+  let newRow = false;
   const TITLES = { track: "Suivi", abs: "Absences", set: "Réglages" };
   function showTab(t) {
     tab = t;
@@ -632,6 +684,7 @@ details.more[open] summary{border-bottom:1px solid var(--sep)}
     if (t === "set") renderSettings();
     render();
     window.scrollTo(0, 0);
+    animIn($("v-" + t), "anim-up");
   }
   document.querySelectorAll(".tab").forEach(b => b.onclick = () => { if (b.dataset.tab === "track" && tab !== "track") track.anchor = new Date(); showTab(b.dataset.tab); });
 
@@ -670,6 +723,7 @@ details.more[open] summary{border-bottom:1px solid var(--sep)}
     const hol = holidayName(ak);
     const plan = planFor(ak, rec);
     const t0 = targetFor(ak, rec || { type: "work" });
+    const before = ["tot", "dc-v", "dc-r", "wk-pill"].map(id => $(id).textContent);
     const planned = F ? plan.net > 0 && !hol : t0 > 0;
     const pun = rec ? rec.punches : [];
     const inside = pun.length % 2 === 1;
@@ -842,6 +896,7 @@ details.more[open] summary{border-bottom:1px solid var(--sep)}
     else renderTransit(null);
 
     renderActivity(ak, rec, c, planned, onPause, plan);
+    ["tot", "dc-v", "dc-r", "wk-pill"].forEach((id, i) => tickIf($(id), before[i]));
   }
   $("proj-out").addEventListener("change", e => { projOut = toMin(e.target.value); render(); });
 
@@ -874,6 +929,7 @@ details.more[open] summary{border-bottom:1px solid var(--sep)}
       rows.push(`<button class="item" data-edit><span class="ico ${col}">${ic(ico)}</span><span class="it-m"><b>${title}</b><small>${esc(sub)}</small></span><span class="it-r num">${clock(p[i])}${p[i] >= 1440 ? `<small style="display:inline;margin-left:4px">+1</small>` : ""}</span></button>`);
     }
     box.innerHTML = rows.reverse().join("");
+    if (newRow) { newRow = false; const f = box.querySelector(".item"); if (f) f.classList.add("enter"); }
   }
   $("activity").addEventListener("click", e => { if (e.target.closest("[data-edit]")) openDay(activeKey()); });
 
@@ -979,6 +1035,7 @@ details.more[open] summary{border-bottom:1px solid var(--sep)}
     const resuming = kind === "in" && rec.punches.length > 0 && rec.pause;
     rec.punches.push(t);
     rec.pause = kind === "out" && !!asPause;
+    newRow = true;
     saveDay(ak, rec);
     const b = kind === "out" && asPause ? $("act-pause") : $("act-main"); b.classList.remove("pop"); void b.offsetWidth; b.classList.add("pop");
     const label = kind === "in" ? (resuming ? "Reprise" : "Entrée") : (asPause ? "Pause" : "Sortie");
@@ -998,8 +1055,37 @@ details.more[open] summary{border-bottom:1px solid var(--sep)}
   $("spark-pill").onclick = () => { track = { mode: "month", anchor: new Date() }; showTab("track"); };
 
   const scrim = $("scrim");
-  const openSheet = html => { scrim.innerHTML = `<div class="sheet" role="dialog" aria-modal="true"><div class="grab"></div>${html}</div>`; scrim.hidden = false; };
-  const closeSheet = () => { scrim.hidden = true; scrim.innerHTML = ""; };
+  let closeT = null;
+  const openSheet = html => {
+    clearTimeout(closeT); scrim.classList.remove("closing");
+    const cur = !scrim.hidden && scrim.querySelector(".sheet");
+    if (cur) { cur.innerHTML = `<div class="grab"></div>${html}`; return; }   // déjà ouverte : on change le contenu sans rejouer l'animation
+    scrim.innerHTML = `<div class="sheet" role="dialog" aria-modal="true"><div class="grab"></div>${html}</div>`;
+    scrim.hidden = false;
+  };
+  const closeSheet = () => {
+    if (scrim.hidden || scrim.classList.contains("closing")) return;
+    scrim.classList.add("closing");
+    closeT = setTimeout(() => { scrim.hidden = true; scrim.innerHTML = ""; scrim.classList.remove("closing", "dragging"); }, 250);
+  };
+  // glisser la fenêtre vers le bas pour la fermer
+  (() => {
+    let y0 = null, dy = 0, sh = null;
+    scrim.addEventListener("pointerdown", e => {
+      sh = scrim.querySelector(".sheet"); if (!sh || e.button > 0) return;
+      const top = sh.getBoundingClientRect().top;
+      if (e.clientY - top > 64 || sh.scrollTop > 0 || e.target.closest("input,select,button,textarea")) { sh = null; return; }
+      y0 = e.clientY; dy = 0; scrim.classList.add("dragging"); sh.classList.remove("snap");
+    });
+    window.addEventListener("pointermove", e => { if (y0 == null || !sh) return; dy = Math.max(0, e.clientY - y0); sh.style.transform = `translateY(${dy}px)`; });
+    const end = () => {
+      if (y0 == null || !sh) return; y0 = null; scrim.classList.remove("dragging");
+      if (dy > 110) { sh.style.setProperty("--dy", dy + "px"); sh.style.transform = ""; closeSheet(); }
+      else { sh.classList.add("snap"); sh.style.transform = ""; }
+      sh = null;
+    };
+    window.addEventListener("pointerup", end); window.addEventListener("pointercancel", end);
+  })();
   scrim.addEventListener("click", e => { if (e.target === scrim) closeSheet(); });
   document.addEventListener("keydown", e => { if (e.key === "Escape" && !scrim.hidden) closeSheet(); });
   const sheetEl = () => scrim.querySelector(".sheet");
@@ -1145,7 +1231,7 @@ details.more[open] summary{border-bottom:1px solid var(--sep)}
       const cols = `grid-template-columns:repeat(${slots},minmax(0,1fr))`;
       const barsHtml = `<div class="card bars-wrap">
         <div class="bars" style="${cols}">${ref ? `<div class="tl" style="bottom:${(ref / scale * 120).toFixed(1)}px"></div>` : ""}
-          ${bars.map(b => `<button class="${b.cls}" data-day="${b.k}" style="height:${b.cls === "off" ? 6 : Math.max(6, b.val / scale * 120).toFixed(1)}px" aria-label="${esc(longDate(b.d))}"></button>`).join("")}</div>
+          ${bars.map((b, i) => `<button class="${b.cls}" data-day="${b.k}" style="animation-delay:${i * 40}ms;height:${b.cls === "off" ? 6 : Math.max(6, b.val / scale * 120).toFixed(1)}px" aria-label="${esc(longDate(b.d))}"></button>`).join("")}</div>
         <div class="bar-l" style="${cols}">${bars.map(b => b.k === ak ? `<b>${"DLMMJVS"[b.d.getDay()]}</b>` : `<span>${"DLMMJVS"[b.d.getDay()]}</span>`).join("")}</div>
         ${ref ? `<p class="note" style="margin:0">Pointillés : ${hm(ref)} par jour</p>` : ""}
       </div>`;
@@ -1207,15 +1293,16 @@ details.more[open] summary{border-bottom:1px solid var(--sep)}
       if (!F) after = () => bindChart($("chart"), pts, slots);
     }
     const v = $("v-track");
-    v.innerHTML = `<div class="seg" role="tablist"><button data-mode="week" class="${mode === "week" ? "on" : ""}">Semaine</button><button data-mode="month" class="${mode === "month" ? "on" : ""}">Mois</button></div>
+    v.innerHTML = `${segHTML("mode", [["week", "Semaine"], ["month", "Mois"]], mode, "data-mode")}
       <div class="nav"><button id="tr-prev" aria-label="Précédent">‹</button><span>${navTxt}</span><button id="tr-next" aria-label="Suivant" ${isCurrent ? "disabled" : ""}>›</button></div>
-      ${html}
-      <button class="ghost" id="h-add">Ajouter une journée</button>`;
+      <div id="tr-body" style="display:flex;flex-direction:column;gap:12px">${html}
+      <button class="ghost" id="h-add">Ajouter une journée</button></div>`;
     after();
-    v.querySelectorAll("[data-mode]").forEach(b => b.onclick = () => { track.mode = b.dataset.mode; renderTrack(); });
+    slideSegs(v);
+    v.querySelectorAll("[data-mode]").forEach(b => b.onclick = () => { if (track.mode === b.dataset.mode) return; track.mode = b.dataset.mode; renderTrack(); animIn($("tr-body"), "anim-up"); });
     v.querySelectorAll("[data-day]").forEach(b => b.onclick = () => openDay(b.dataset.day, !state.days[b.dataset.day]));
-    v.querySelectorAll("[data-week]").forEach(b => b.onclick = () => { track = { mode: "week", anchor: parseKey(b.dataset.week) }; renderTrack(); window.scrollTo(0, 0); });
-    const step = dir => { const a = new Date(track.anchor); if (track.mode === "week") a.setDate(a.getDate() + 7 * dir); else { a.setDate(1); a.setMonth(a.getMonth() + dir); } track.anchor = a; renderTrack(); };
+    v.querySelectorAll("[data-week]").forEach(b => b.onclick = () => { track = { mode: "week", anchor: parseKey(b.dataset.week) }; renderTrack(); window.scrollTo(0, 0); animIn($("tr-body"), "anim-up"); });
+    const step = dir => { const a = new Date(track.anchor); if (track.mode === "week") a.setDate(a.getDate() + 7 * dir); else { a.setDate(1); a.setMonth(a.getMonth() + dir); } track.anchor = a; renderTrack(); animIn($("tr-body"), dir > 0 ? "anim-r" : "anim-l"); };
     $("tr-prev").onclick = () => step(-1);
     $("tr-next").onclick = () => step(1);
     $("h-add").onclick = () => { const y = new Date(); y.setDate(y.getDate() - 1); openDay(dateKey(y), true); };
@@ -1379,7 +1466,7 @@ details.more[open] summary{border-bottom:1px solid var(--sep)}
     lsWrite();
   }
   const dayChips = d => `<div class="days">${WEEK.map(w => `<button data-dow="${w}" class="${d.workdays[w] ? "on" : ""}" aria-pressed="${d.workdays[w]}">${"DLMMJVS"[w]}</button>`).join("")}</div>`;
-  const typeChoices = d => `<div class="choices">${Object.keys(WORK).map(t => `<button class="choice${d.type === t ? " on" : ""}" data-wtype="${t}"><span class="ico big blue">${ic(WORK[t].ico)}</span><span class="it-m"><b>${WORK[t].name}</b><small>${WORK[t].desc}</small></span><span class="radio"></span></button>`).join("")}</div>`;
+  const typeChoices = d => { const j = d._just; d._just = false; return `<div class="choices">${Object.keys(WORK).map(t => `<button class="choice${d.type === t ? " on" : ""}${d.type === t && j ? " just" : ""}" data-wtype="${t}"><span class="ico big blue">${ic(WORK[t].ico)}</span><span class="it-m"><b>${WORK[t].name}</b><small>${WORK[t].desc}</small></span><span class="radio"></span></button>`).join("")}</div>`; };
   function detailsHTML(d) {
     const perDay = d.workdays.filter(Boolean).length ? Math.round(d.weekly / d.workdays.filter(Boolean).length) : 0;
     const days = `<div class="sect">Jours travaillés</div><div class="list">${dayChips(d)}</div>`;
@@ -1429,7 +1516,7 @@ details.more[open] summary{border-bottom:1px solid var(--sep)}
     const num = v => { const x = parseFloat(String(v).replace(",", ".")); return isNaN(x) ? null : x; };
     root.querySelectorAll("[data-wtype]").forEach(b => b.onclick = () => {
       const t = b.dataset.wtype; if (t === d.type) return;
-      d.type = t;
+      d.type = t; d._just = true;
       if (t === "partiel") { d.weekly = Math.round(d.full * d.rate / 100); spread(d); }
       if (t === "variable") { d.weekly = d.full; spread(d); }
       if (t === "fixe") d.fixed = d.workdays.map(w => w ? { s: d.fs, e: d.fe } : null);
@@ -1517,7 +1604,7 @@ details.more[open] summary{border-bottom:1px solid var(--sep)}
     let step = 0;
     const STEPS = 6;
     const box = $("onb"); box.hidden = false;
-    const go = n => { step = n; draw(); box.scrollTop = 0; };
+    const go = n => { const dir = n > step ? "anim-r" : "anim-l"; step = n; draw(); box.scrollTop = 0; animIn(box.querySelector(".onb-in"), dir); };
     function draw() {
       const y = box.scrollTop;
       const dots = `<div class="steps">${Array.from({ length: STEPS }, (_, i) => `<i class="${i === step ? "on" : ""}"></i>`).join("")}</div>`;
@@ -1537,7 +1624,7 @@ details.more[open] summary{border-bottom:1px solid var(--sep)}
           </div><p class="err" id="ob-err" hidden></p>`;
       } else if (step === 2) {
         body = `<h2>Où travailles-tu ?</h2><p class="lead">Pour les jours fériés et la durée légale.</p>
-          <div class="choices">${Object.keys(REGIONS).map(r => `<button class="choice${d.region === r ? " on" : ""}" data-region="${r}"><span class="it-m"><b>${REGIONS[r].name}</b><small>${REGIONS[r].desc}</small></span><span class="radio"></span></button>`).join("")}</div>`;
+          <div class="choices">${Object.keys(REGIONS).map(r => `<button class="choice${d.region === r ? " on" : ""}${d.region === r && d._justR ? " just" : ""}" data-region="${r}"><span class="it-m"><b>${REGIONS[r].name}</b><small>${REGIONS[r].desc}</small></span><span class="radio"></span></button>`).join("")}</div>`;
       } else if (step === 3) {
         body = `<h2>Ton type d'horaires</h2><p class="lead">Tu pourras le changer à tout moment dans Réglages.</p>${typeChoices(d)}`;
       } else if (step === 4) {
@@ -1565,7 +1652,7 @@ details.more[open] summary{border-bottom:1px solid var(--sep)}
       box.querySelectorAll("[data-region]").forEach(b => b.onclick = () => {
         d.region = b.dataset.region; d.full = FULL[d.region]; d.weekly = d.full; spread(d);
         if (d.region === "FR") { d.maxWeek = 2880; }
-        draw();
+        d._justR = true; draw(); d._justR = false;
       });
       if (step === 3 || step === 4) bindDetails(box, d, draw);
       box.querySelectorAll("[data-p]").forEach(i => i.addEventListener("change", () => { const x = parseFloat(String(i.value).replace(",", ".")); const f = i.dataset.p; d[f] = isNaN(x) ? (f === "maxWeek" ? 0 : d[f]) : (f === "maxWeek" ? Math.round(x * 60) : x); }));
@@ -1618,7 +1705,7 @@ details.more[open] summary{border-bottom:1px solid var(--sep)}
       <button class="cta" id="st-save">Enregistrer les réglages</button>
       <div class="sect">Apparence</div>
       <div class="list">
-        <div style="padding:12px 0"><div class="seg">${[["auto", "Auto"], ["light", "Clair"], ["dark", "Sombre"]].map(([val, l]) => `<button data-theme="${val}" class="${s.theme === val ? "on" : ""}">${l}</button>`).join("")}</div></div>
+        <div style="padding:12px 0">${segHTML("theme", [["auto", "Auto"], ["light", "Clair"], ["dark", "Sombre"]], s.theme, "data-theme")}</div>
         <div class="swatches" style="border-top:1px solid var(--sep)">${Object.keys(ACCENTS).map(k => `<button class="sw${s.accent === k ? " on" : ""}" data-accent="${k}"><i style="background:${ACCENTS[k][mode][0]}"></i>${ACCENTS[k].name}</button>`).join("")}</div>
       </div>
       <div class="sect">Sauvegarde</div>
@@ -1628,6 +1715,7 @@ details.more[open] summary{border-bottom:1px solid var(--sep)}
     $("st-prof").onclick = openProfile;
     $("st-work").onclick = () => openWork();
     $("st-redo").onclick = openOnboarding;
+    slideSegs(v);
     v.querySelectorAll("[data-accent]").forEach(b => b.onclick = () => { state.settings.accent = b.dataset.accent; saveSettings(); renderSettings(); });
     v.querySelectorAll("[data-theme]").forEach(b => b.onclick = () => { state.settings.theme = b.dataset.theme; saveSettings(); renderSettings(); });
     let acT;
@@ -1682,8 +1770,8 @@ details.more[open] summary{border-bottom:1px solid var(--sep)}
     const t = $("toast"), u = $("toast-undo");
     $("toast-msg").textContent = m;
     u.hidden = !undo; t.classList.toggle("undo", !!undo);
-    u.onclick = undo ? () => { undo(); t.hidden = true; } : null;
-    t.hidden = false; clearTimeout(tt); tt = setTimeout(() => t.hidden = true, undo ? 5000 : 2000);
+    u.onclick = undo ? () => { undo(); t.classList.remove("show"); } : null;
+    t.classList.add("show"); clearTimeout(tt); tt = setTimeout(() => t.classList.remove("show"), undo ? 5000 : 2200);
   }
 
   render();
