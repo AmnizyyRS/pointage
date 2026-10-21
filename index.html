@@ -233,7 +233,9 @@ svg.i{width:20px;height:20px;fill:none;stroke:currentColor;stroke-width:1.9;stro
 :root[data-theme="dark"] .sheet{background:#1C1C1E;--card:#2C2C2E;--sep:#3A3A3C;--grey-soft:#3A3A3C}
 .sheet > *{flex-shrink:0}
 .sheet .sect{margin-bottom:-6px}
-.grab{width:36px;height:5px;border-radius:3px;background:var(--faint);align-self:center}
+.grab{align-self:stretch;height:22px;margin:-8px -16px -10px;position:relative;touch-action:none;cursor:grab}
+.grab::before{content:"";position:absolute;left:50%;top:9px;width:38px;height:5px;margin-left:-19px;border-radius:3px;background:var(--faint)}
+.sheet > h3{touch-action:none}
 .sheet h3{margin:4px 4px 0;font-size:22px;font-weight:700;letter-spacing:-.02em}
 .toast{position:fixed;left:50%;top:calc(12px + env(safe-area-inset-top,0px));transform:translateX(-50%);background:var(--fg);color:var(--bg);font-size:14px;font-weight:500;padding:6px 6px 6px 16px;min-height:40px;border-radius:20px;z-index:30;white-space:nowrap;display:flex;align-items:center;gap:12px;box-shadow:0 8px 28px rgba(0,0,0,.18)}
 .toast button{border:0;background:rgba(128,128,128,.28);color:var(--bg);font-weight:600;font-size:14px;border-radius:14px;padding:6px 12px}
@@ -355,7 +357,8 @@ details.more[open] summary{border-bottom:1px solid var(--sep)}
 .scrim .sheet{animation:sheetUp .42s var(--ease) both;will-change:transform}
 .scrim.closing{animation:scrimOut .24s ease both}
 .scrim.closing .sheet{animation:sheetDown .26s cubic-bezier(.4,0,1,1) both}
-.scrim.dragging .sheet{animation:none;transition:none}
+.sheet.settled{animation:none}
+.scrim.dragging .sheet{transition:none}
 .sheet.snap{transition:transform .3s var(--ease)}
 @keyframes scrimIn{from{background-color:transparent}}
 @keyframes scrimOut{to{background-color:transparent}}
@@ -436,7 +439,7 @@ button.item:active{opacity:.5}
 @keyframes fadeOnly{from{opacity:0}}
 @media (prefers-reduced-motion:reduce){
   .anim-up,.anim-l,.anim-r,.tick,.item.enter{animation-name:fadeOnly}
-  .scrim .sheet,.scrim.closing .sheet{animation-name:fadeOnly;animation-duration:.2s}
+  .scrim .sheet:not(.settled),.scrim.closing .sheet{animation-name:fadeOnly;animation-duration:.2s}
   .scrim.closing .sheet{animation-direction:reverse}
   .bars button,.tab.on svg,.choice.just .radio{animation:none}
   .toast{transform:translate(-50%,0)}
@@ -519,7 +522,7 @@ button.item:active{opacity:.5}
 <script>
 (() => {
   const LS_KEY = "pointage.v1";
-  const APP_VERSION = "1.7 · relief violet";
+  const APP_VERSION = "1.7.1 · corrections";
   const clone = o => JSON.parse(JSON.stringify(o));
   const FULL = { GE: 2520, FR: 2100, none: 2400 };   // temps plein par semaine (min) selon la région
   const DEFAULT_SETTINGS = {
@@ -532,7 +535,7 @@ button.item:active{opacity:.5}
     rotation: ["m", "a", "n"], rotAnchor: null,
     days: [false, true, true, true, true, true, false], // équipes / forfait : jours travaillés
     forfaitDays: 218,
-    pauseMin: 30, offered: 0, winStart: 390, clampStart: false, minOut: null,
+    pauseMin: 30, offered: 0, skipLunch: "deduct", winStart: 390, clampStart: false, minOut: null,
     accent: "violet", accentV: 2, theme: "auto", holidays: "GE",
     vacDays: 25, maxWeek: 2700, remoteCap: 0,
     transit: { home: "", work: "", margin: 5 }
@@ -757,7 +760,8 @@ button.item:active{opacity:.5}
     const lunch = needsPause && gapList.length ? Math.max(...gapList) : 0;
     const others = gaps - lunch;
     const offered = Math.min(s.offered || 0, others);
-    const pauseDue = needsPause ? Math.max(0, s.pauseMin - lunch) : 0;
+    // pause de midi non prise : déduite quand même (par défaut) ou tout le temps compte (réglage)
+    const pauseDue = needsPause && !(s.skipLunch === "count" && lunch === 0) ? Math.max(0, s.pauseMin - lunch) : 0;
     const net = Math.max(0, raw + offered - pauseDue);
     const remaining = t + (t > 330 ? Math.max(0, s.pauseMin - lunch) : pauseDue) - raw - offered;
     const complete = !inside && !paused;
@@ -787,7 +791,8 @@ button.item:active{opacity:.5}
   const $ = id => document.getElementById(id);
   let tab = "today";
   const animIn = (el, cls) => { if (!el) return; el.classList.remove("anim-up", "anim-l", "anim-r"); void el.offsetWidth; el.classList.add(cls); };
-  const tickIf = (el, before) => { if (el && el.textContent !== before) { el.classList.remove("tick"); void el.offsetWidth; el.classList.add("tick"); } };
+  let firstPaint = true;
+  const tickIf = (el, before) => { if (el && !firstPaint && el.textContent !== before) { el.classList.remove("tick"); void el.offsetWidth; el.classList.add("tick"); } };
   const segPrev = {};
   const segHTML = (id, items, active, attr) => { const k = Math.max(0, items.findIndex(([v]) => v === active)); return `<div class="seg" role="tablist" data-seg="${id}" data-k="${k}" style="--n:${items.length};--k:${segPrev[id] ?? k}">${items.map(([v, l]) => `<button ${attr}="${v}" class="${v === active ? "on" : ""}" role="tab" aria-selected="${v === active}">${l}</button>`).join("")}</div>`; };
   const slideSegs = root => root.querySelectorAll(".seg[data-seg]").forEach(sg => { void sg.offsetWidth; requestAnimationFrame(() => { sg.style.setProperty("--k", sg.dataset.k); segPrev[sg.dataset.seg] = +sg.dataset.k; }); });
@@ -972,7 +977,7 @@ button.item:active{opacity:.5}
       dv.textContent = signed(c.balance); dv.classList.add(c.balance >= 0 ? "pos" : "neg");
       pct = Math.min(100, c.daily ? c.net / c.daily * 100 : 100);
       fl.textContent = `${hm(c.net)} comptées`;
-      fr.textContent = [c.pauseDue > 0 ? `midi ${s.pauseMin} min déduites` : (c.lunch ? `midi ${c.lunch} min` : ""), c.offered ? `${c.offered} min offertes` : ""].filter(Boolean).join(" · ");
+      fr.textContent = [c.pauseDue > 0 ? (c.lunch ? `midi ${c.lunch} min · ${c.pauseDue} min déduites en plus` : `pas de pause de midi · ${s.pauseMin} min déduites`) : (c.lunch ? `midi ${c.lunch} min` : ""), c.offered ? `${c.offered} min offertes` : ""].filter(Boolean).join(" · ");
     }
     if (!F && s.maxWeek && wkNet > s.maxWeek) setNudge(`${hm(wkNet)} cette semaine : au-dessus de ton maximum de ${hm(s.maxWeek)}.`, true);
     $("dc-track").hidden = !showTrack;
@@ -1017,6 +1022,7 @@ button.item:active{opacity:.5}
 
     renderActivity(ak, rec, c, planned, onPause, plan);
     ["tot", "dc-v", "dc-r", "wk-pill"].forEach((id, i) => tickIf($(id), before[i]));
+    firstPaint = false;
   }
   $("proj-out").addEventListener("change", e => { projOut = toMin(e.target.value); render(); });
 
@@ -1182,29 +1188,49 @@ button.item:active{opacity:.5}
     if (cur) { cur.innerHTML = `<div class="grab"></div>${html}`; return; }   // déjà ouverte : on change le contenu sans rejouer l'animation
     scrim.innerHTML = `<div class="sheet" role="dialog" aria-modal="true"><div class="grab"></div>${html}</div>`;
     scrim.hidden = false;
+    const sh = scrim.querySelector(".sheet");
+    sh.addEventListener("animationend", e => { if (e.animationName === "sheetUp" || e.animationName === "fadeOnly") sh.classList.add("settled"); });
   };
   const closeSheet = () => {
     if (scrim.hidden || scrim.classList.contains("closing")) return;
     scrim.classList.add("closing");
     closeT = setTimeout(() => { scrim.hidden = true; scrim.innerHTML = ""; scrim.classList.remove("closing", "dragging"); }, 250);
   };
-  // glisser la fenêtre vers le bas pour la fermer
+  // glisser la fenêtre vers le bas pour la fermer (comme sur iOS) : depuis la poignée, ou n'importe où quand la fenêtre est en haut de son contenu
   (() => {
-    let y0 = null, dy = 0, sh = null;
-    scrim.addEventListener("pointerdown", e => {
-      sh = scrim.querySelector(".sheet"); if (!sh || e.button > 0) return;
-      const top = sh.getBoundingClientRect().top;
-      if (e.clientY - top > 64 || sh.scrollTop > 0 || e.target.closest("input,select,button,textarea")) { sh = null; return; }
-      y0 = e.clientY; dy = 0; scrim.classList.add("dragging"); sh.classList.remove("snap");
-    });
-    window.addEventListener("pointermove", e => { if (y0 == null || !sh) return; dy = Math.max(0, e.clientY - y0); sh.style.transform = `translateY(${dy}px)`; });
-    const end = () => {
-      if (y0 == null || !sh) return; y0 = null; scrim.classList.remove("dragging");
-      if (dy > 110) { sh.style.setProperty("--dy", dy + "px"); sh.style.transform = ""; closeSheet(); }
-      else { sh.classList.add("snap"); sh.style.transform = ""; }
-      sh = null;
+    let y0 = null, x0 = 0, dy = 0, t0 = 0, sh = null, dragging = false;
+    const start = (x, y, target) => {
+      sh = scrim.querySelector(".sheet"); if (!sh || scrim.classList.contains("closing")) { sh = null; return; }
+      if (target.closest("input,select,textarea") || (sh.scrollTop > 0 && !target.closest(".grab,h3"))) { sh = null; return; }
+      y0 = y; x0 = x; dy = 0; t0 = performance.now(); dragging = false;
     };
-    window.addEventListener("pointerup", end); window.addEventListener("pointercancel", end);
+    const move = (x, y, ev) => {
+      if (y0 == null || !sh) return;
+      const d = y - y0;
+      if (!dragging) {
+        if (Math.abs(x - x0) > Math.abs(d) || d < -4) { y0 = null; sh = null; return; }   // geste horizontal ou vers le haut : on laisse défiler
+        if (d < 6) return;
+        dragging = true; scrim.classList.add("dragging"); sh.classList.remove("snap");
+      }
+      if (ev && ev.cancelable) ev.preventDefault();
+      dy = Math.max(0, d); sh.style.transform = `translateY(${dy}px)`;
+    };
+    const end = () => {
+      if (y0 == null || !sh) { y0 = null; sh = null; return; }
+      const v = dy / Math.max(1, performance.now() - t0);
+      if (dragging) {
+        scrim.classList.remove("dragging");
+        if (dy > 110 || (dy > 40 && v > 0.5)) { sh.style.setProperty("--dy", dy + "px"); closeSheet(); requestAnimationFrame(() => { if (sh) sh.style.transform = ""; }); }
+        else { sh.classList.add("snap"); sh.style.transform = ""; }
+      }
+      y0 = null; dragging = false; setTimeout(() => { sh = null; }, 0);
+    };
+    scrim.addEventListener("touchstart", e => { const t = e.touches[0]; start(t.clientX, t.clientY, e.target); }, { passive: true });
+    scrim.addEventListener("touchmove", e => { const t = e.touches[0]; move(t.clientX, t.clientY, e); }, { passive: false });
+    scrim.addEventListener("touchend", end); scrim.addEventListener("touchcancel", end);
+    scrim.addEventListener("pointerdown", e => { if (e.pointerType === "mouse" && e.button === 0) start(e.clientX, e.clientY, e.target); });
+    window.addEventListener("pointermove", e => { if (e.pointerType === "mouse") move(e.clientX, e.clientY, null); });
+    window.addEventListener("pointerup", e => { if (e.pointerType === "mouse") end(); });
   })();
   scrim.addEventListener("click", e => { if (e.target === scrim) closeSheet(); });
   document.addEventListener("keydown", e => { if (e.key === "Escape" && !scrim.hidden) closeSheet(); });
@@ -1931,6 +1957,7 @@ button.item:active{opacity:.5}
       <div class="list">
         <label class="item"><span>Pauses payées par jour (min)<small>Pauses courtes comptées comme du travail</small></span><input type="number" inputmode="numeric" min="0" max="120" id="st-off" value="${s.offered || 0}" style="max-width:70px"></label>
         <label class="item"><span>Pause de midi minimum (min)<small>Non payée, déduite si elle est plus courte</small></span><input type="number" inputmode="numeric" min="0" max="180" id="st-pause" value="${s.pauseMin}" style="max-width:70px"></label>
+        <label class="item"><span>Midi sautée<small>Si tu ne prends pas de pause de midi</small></span><select id="st-skip"><option value="deduct" ${s.skipLunch !== "count" ? "selected" : ""}>Déduite quand même</option><option value="count" ${s.skipLunch === "count" ? "selected" : ""}>Tout compte</option></select></label>
         ${isFlex() ? `<label class="item"><span>Compter seulement dès ${clock(s.winStart)}<small>Les minutes avant la plage ne comptent pas</small></span><input type="checkbox" class="toggle" id="st-clamp" ${s.clampStart ? "checked" : ""}></label>` : ""}
         ${F ? "" : `<label class="item"><span>Maximum par semaine (h)</span><input type="number" inputmode="decimal" min="0" max="80" step="0.5" id="st-maxw" value="${s.maxWeek ? s.maxWeek / 60 : ""}" style="max-width:70px"></label>`}
       </div>
@@ -1980,6 +2007,7 @@ button.item:active{opacity:.5}
       const num = (id, def) => { const el = $(id); if (!el) return def; const val = parseFloat(String(el.value).replace(",", ".")); return isNaN(val) ? def : val; };
       Object.assign(state.settings, {
         pauseMin: Math.max(0, Math.round(num("st-pause", 30))), offered: Math.max(0, Math.round(num("st-off", 0))),
+        skipLunch: $("st-skip").value,
         clampStart: $("st-clamp") ? $("st-clamp").checked : s.clampStart,
         maxWeek: $("st-maxw") ? Math.round(num("st-maxw", 0) * 60) : s.maxWeek,
         holidays: $("st-hol").value, vacDays: num("st-vac", 25), remoteCap: Math.round(num("st-rcap", 0)),
@@ -2031,7 +2059,10 @@ button.item:active{opacity:.5}
     navigator.serviceWorker.register("sw.js", { updateViaCache: "none" }).then(r => { r.update(); document.addEventListener("visibilitychange", () => { if (!document.hidden) r.update(); }); }).catch(() => {});
     // nouvelle version installée : on recharge une fois, en douceur
     let reloaded = false;
-    navigator.serviceWorker.addEventListener("controllerchange", () => { if (hadSW && !reloaded && scrim.hidden && $("onb").hidden) { reloaded = true; location.reload(); } });
+    let pending = false;
+    const reloadIfHidden = () => { if (pending && !reloaded && document.hidden) { reloaded = true; location.reload(); } };
+    navigator.serviceWorker.addEventListener("controllerchange", () => { if (hadSW) { pending = true; reloadIfHidden(); } });
+    document.addEventListener("visibilitychange", reloadIfHidden);
   }
   window.__b = { calc, calcK, planFor, activeKey, state: () => state, showTab, openOnboarding };
 })();
