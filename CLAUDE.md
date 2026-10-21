@@ -54,14 +54,14 @@ Profil de référence (Alex) : horaire variable, 42 h sur lun–ven (8 h 24/jour
 
 ## Organisation du code (`index.html`)
 
-- Rendu : `render()` → `renderToday()` / `renderTrack()` / `renderAbs()` / `renderSettings()` selon l'onglet.
+- Rendu : `render()` → `renderToday()` / `renderTrack()` / `renderTrip()` / `renderAbs()` / `renderSettings()` selon l'onglet (5 onglets : Aujourd'hui, Suivi, Trajets, Absences, Réglages).
 - Aujourd'hui : compteur + courbe 30 jours, 4 actions rondes (Entrée/Sortie/Reprise, Pause/Terminer, Absence, Corriger), carte « Sortie possible », projection « Si tu sors à », trajet, totaux Travail/Pauses/Compté, activité du jour façon relevé bancaire.
 - Carte d'alerte (`renderAlert()`) sous les boutons : sortie oubliée des 14 derniers jours (`forgotten()`, heure proposée par `guessOut()` = sortie habituelle ou heures faites), sinon résumé de la semaine passée (lundi → mercredi, tant que `settings.weekSeen` n'est pas ce lundi), sinon rappel de sauvegarde (jamais exporté après 7 jours, ou dernière copie > 14 jours ; `settings.lastExport`, `settings.backupSnooze`). Export JSON par `exportBackup()`.
 - Résumé de la semaine : `weekStats(lundi)` (solde, comptées/prévues, moyennes, phrase), `openWeek(lundi)` (fenêtre, aussi depuis Suivi › Semaine), `weekImage(w)` (PNG 1080 × 1350 dessiné sur canvas, toujours en clair, partagé par `shareFile`). L'image est générée à l'ouverture de la fenêtre : iOS n'ouvre le partage que juste après un toucher.
 - Fenêtres : `openSheet()` / `closeSheet()` (glisser vers le bas pour fermer, classes `settled`, `closing`, `dragging`). `openDay()` (corriger une journée), `openRange()` (poser une absence), `openWork()` (type d'horaires), `openProfile()`.
 - Accueil : `openOnboarding()` = conversation façon messagerie, questions définies dans `steps()` selon le profil, retour en arrière par `marks[]`.
 - Profil partagé accueil/réglages : `draftFrom()`, `applyDraft()`, `detailsHTML()`, `bindDetails()`, `checkDraft()`.
-- Trajets : API publique `transport.opendata.ch/v1/connections` (Suisse + Léman Express), rafraîchie toutes les 3 min. Les lignes uniquement françaises peuvent manquer.
+- Trajets : API publique `transport.opendata.ch/v1/connections` (Suisse + Léman Express, lignes frontalières comme le 274), rafraîchie toutes les 3 min, lue par `loadConns()`. Carte sur Aujourd'hui (`renderTransit()`, prochain trajet) qui ouvre l'onglet **Trajets** (`renderTrip()`, état `trip`) : Retour/Aller, heure de départ réglable, 6 trajets dépliables, « Pars au plus tard à… » quand le trajet suivant arrive 30 min plus tard ou plus, effet sur le compteur du jour. « Quitte le travail à » = départ − marge (`transit.margin`), toujours. Le soir, l'aller propose demain dès `winStart − 1 h`.
 - Fériés : `holidaysOf(region, année)` (Genève, France), Pâques par l'algorithme grégorien.
 - Debug : `window.__b` expose `calc`, `calcK`, `planFor`, `activeKey`, `state`, `showTab`, `openOnboarding`.
 
