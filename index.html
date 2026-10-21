@@ -172,6 +172,7 @@ svg.i{width:20px;height:20px;fill:none;stroke:currentColor;stroke-width:1.9;stro
 .tile{background:var(--card);border-radius:18px;padding:12px;display:flex;flex-direction:column;gap:2px;min-width:0}
 .tile span{font-size:12px;color:var(--muted)}
 .tile b{font-size:19px;font-weight:700;letter-spacing:-.02em;white-space:nowrap}
+.tile small{font-size:11.5px;color:var(--muted);line-height:1.3}
 .bars-wrap{display:flex;flex-direction:column;gap:8px}
 .bars{position:relative;height:120px;display:grid;gap:14px;align-items:end;padding:0 4px}
 .bars .tl{position:absolute;left:0;right:0;border-top:1.5px dashed var(--faint);pointer-events:none}
@@ -496,6 +497,7 @@ button.item:active{opacity:.5}
 
     <button class="card rowcard" id="transit" hidden></button>
 
+    <div class="tiles" id="day-tiles" hidden></div>
     <div class="sect">Activité du jour</div>
     <section class="list" id="activity"></section>
   </main>
@@ -522,7 +524,7 @@ button.item:active{opacity:.5}
 <script>
 (() => {
   const LS_KEY = "pointage.v1";
-  const APP_VERSION = "1.7.1 · corrections";
+  const APP_VERSION = "1.8 · totaux travail et pauses";
   const clone = o => JSON.parse(JSON.stringify(o));
   const FULL = { GE: 2520, FR: 2100, none: 2400 };   // temps plein par semaine (min) selon la région
   const DEFAULT_SETTINGS = {
@@ -1021,6 +1023,17 @@ button.item:active{opacity:.5}
     else renderTransit(null);
 
     renderActivity(ak, rec, c, planned, onPause, plan);
+    // totaux du jour
+    const dt = $("day-tiles");
+    if (c && !c.absence && pun.length) {
+      const pauseNow = c.gaps + (onPause ? Math.max(0, n - c.last) : 0);
+      const pauseSub = [c.lunch ? `midi ${c.lunch} min` : "", c.offered ? `${c.offered} payées` : ""].filter(Boolean).join(" · ") || (pauseNow ? "" : "aucune pour l'instant");
+      const cnt = F ? c.net : c.net;
+      dt.innerHTML = `<div class="tile"><span>Travail</span><b class="num">${hm(c.raw)}</b><small class="num">${c.complete ? `${clock(c.first)} → ${clock(c.last)}` : `depuis ${clock(c.first)}`}</small></div>
+        <div class="tile"><span>Pauses</span><b class="num">${mins(pauseNow)}</b><small class="num">${pauseSub}</small></div>
+        <div class="tile"><span>${F ? "Présence" : "Compté"}</span><b class="num">${hm(cnt)}</b><small class="num">${F ? "" : [c.offered ? `+ ${c.offered} min payées` : "", c.pauseDue ? `− ${c.pauseDue} min de midi` : ""].filter(Boolean).join(" · ") || "= ton travail"}</small></div>`;
+      dt.hidden = false;
+    } else dt.hidden = true;
     ["tot", "dc-v", "dc-r", "wk-pill"].forEach((id, i) => tickIf($(id), before[i]));
     firstPaint = false;
   }
@@ -1256,6 +1269,7 @@ button.item:active{opacity:.5}
       ${shiftChips}
       <div class="sect">Pointages</div>
       ${d.times.length ? `<div class="list">${rows}</div>` : ""}
+      ${(() => { const p = sortTimes(d.times); if (p.length < 2) return ""; const c = calc({ punches: p, type: d.type, pause: false }, (d.date || k) === activeKey() && p.length % 2 === 1, d.date || k); if (!c) return ""; return `<div class="tiles"><div class="tile"><span>Travail</span><b class="num">${hm(c.raw)}</b></div><div class="tile"><span>Pauses</span><b class="num">${mins(c.gaps)}</b></div><div class="tile"><span>Compté</span><b class="num">${hm(c.net)}</b></div></div>`; })()}
       <button class="addp" id="ed-add">+ Ajouter ${d.times.length % 2 ? "une sortie" : "une entrée"}</button>
       <p class="note">${d.type === "recup" ? "Une récupération sans pointage retire la journée de ton compteur." : `Les pointages sont remis dans l'ordre. La plus longue pause compte comme pause de midi (minimum ${s.pauseMin} min, non payée)${s.offered ? `. Les autres pauses sont offertes jusqu'à ${s.offered} min par jour` : ""}.${s.type === "equipes" ? " Pour un poste de nuit, les heures après minuit sont comptées le lendemain automatiquement." : ""}`}</p>
       <p class="err" id="ed-err" hidden></p>
@@ -1272,6 +1286,7 @@ button.item:active{opacity:.5}
     scrim.querySelectorAll("[data-shift]").forEach(b => b.onclick = () => { const x = read(); x.shift = b.dataset.shift || null; keepScroll(() => openDay(k, isNew, x)); });
     $("ed-add").onclick = () => { const x = read(); const ak = activeKey(); x.times.push(x.date === ak ? hhmm(nowRel(ak)) : (x.times.length ? x.times[x.times.length - 1] : "08:00")); keepScroll(() => openDay(k, isNew, x)); };
     scrim.querySelectorAll("[data-del]").forEach(b => b.onclick = () => { const x = read(); x.times.splice(+b.dataset.del, 1); keepScroll(() => openDay(k, isNew, x)); });
+    scrim.querySelectorAll("input[data-i]").forEach(i => i.addEventListener("change", () => { const x = read(); keepScroll(() => openDay(k, isNew, x)); }));
     $("ed-cancel").onclick = closeSheet;
     $("ed-save").onclick = () => {
       const x = read(), err = m => { $("ed-err").textContent = m; $("ed-err").hidden = false; };
@@ -1358,8 +1373,9 @@ button.item:active{opacity:.5}
       navTxt = `Semaine ${isoWeek(mon)} · ${short(mon)} – ${short(addDays(mon, slots - 1))}`;
       const t = totalsOf(keys, ak);
       let plan = 0; keys.forEach(k => { plan += targetFor(k, state.days[k] || { type: "work" }); });
-      let presence = 0, wdays = 0;
-      keys.forEach(k => { const r = state.days[k], c = r && calc(r, k === ak, k); if (c && !c.absence) { presence += c.complete ? c.net : c.raw; wdays++; } });
+      let presence = 0, wdays = 0, wRaw = 0, wPause = 0, wNet = 0;
+      keys.forEach(k => { const r = state.days[k], c = r && calc(r, k === ak, k); if (c && !c.absence) { presence += c.complete ? c.net : c.raw; wdays++; wRaw += c.raw; wPause += c.gaps; wNet += c.net; } });
+      const weekTiles = wdays ? `<div class="tiles"><div class="tile"><span>Travail</span><b class="num">${hm(wRaw)}</b><small>${plural(wdays, "jour")}</small></div><div class="tile"><span>Pauses</span><b class="num">${hm(wPause)}</b><small class="num">≈ ${mins(Math.round(wPause / wdays))} par jour</small></div><div class="tile"><span>${F ? "Présence" : "Compté"}</span><b class="num">${hm(wNet)}</b><small>${F ? "" : "pauses payées incluses"}</small></div></div>` : "";
       const bars = keys.slice(0, slots).map(k => {
         const d = parseKey(k), r = state.days[k], c = r && calc(r, k === ak, k), tgt = F ? (baseFor(k) && !holidayName(k) ? 480 : 0) : targetFor(k, r || { type: "work" });
         let val = 0, cls = "";
@@ -1390,7 +1406,7 @@ button.item:active{opacity:.5}
         const shiftTxt = p.shift ? p.shift.name + " · " : "";
         if (r && r.punches.length) {
           main = c.complete ? hm(c.net) : (k === ak ? `En cours · ${hm(c.raw)}` : "Incomplet");
-          det = `${shiftTxt}${clock(c.first)} → ${c.complete ? clock(c.last) : "…"}${c.lunch ? ` · midi ${c.lunch} min` : ""}`;
+          det = `${shiftTxt}${clock(c.first)} → ${c.complete ? clock(c.last) : "…"} · travail ${hm(c.raw)} · pauses ${mins(c.gaps)}`;
         } else if (r && r.type !== "work") { main = TYPES[r.type] + (r.half ? " ½" : ""); det = r.type === "recup" ? "pris sur le compteur" : "sans pointage"; }
         else if (hol) { main = hol; det = "Jour férié"; }
         else if (r && r.shift === "off") { main = "Repos"; det = "Poste modifié"; }
@@ -1404,7 +1420,7 @@ button.item:active{opacity:.5}
       const warn = !F && s.maxWeek && t.worked > s.maxWeek ? `<p class="err">${hm(t.worked)} travaillées : au-dessus de ton maximum hebdo de ${hm(s.maxWeek)}.</p>` : "";
       const head = F ? `<div class="big-sum"><b class="num">${plural(wdays, "jour")}</b><small class="num">${hm(presence)} de présence cette semaine</small></div>`
         : `<div class="big-sum"><b class="num ${t.n ? (t.bal >= 0 ? "pos" : "neg") : ""}">${t.n ? signed(t.bal) : "—"}</b><small class="num">${hm(t.worked)} comptées · ${hm(plan)} prévues</small></div>`;
-      html = `${head}${barsHtml}${warn}${rows.length ? `<div class="list">${rows.join("")}</div>` : ""}`;
+      html = `${head}${barsHtml}${weekTiles}${warn}${rows.length ? `<div class="list">${rows.join("")}</div>` : ""}`;
     } else {
       const y = anchor.getFullYear(), m = anchor.getMonth(), first = new Date(y, m, 1), lastD = new Date(y, m + 1, 0);
       isCurrent = y === now.getFullYear() && m === now.getMonth();
