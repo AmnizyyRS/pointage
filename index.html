@@ -10,8 +10,8 @@
 <meta name="theme-color" content="#F5F5F7" id="meta-theme">
 <meta name="format-detection" content="telephone=no">
 <link rel="manifest" href="manifest.webmanifest">
-<link rel="apple-touch-icon" href="apple-touch-icon.png">
-<link rel="icon" type="image/png" href="favicon.png">
+<link rel="apple-touch-icon" href="apple-touch-icon.png?v=2">
+<link rel="icon" type="image/png" href="favicon.png?v=2">
 <title>Balancier.</title>
 <style>
 /* Layout (A1 · compteur façon néobanque): fond gris clair, cartes blanches très arrondies. Aujourd'hui = compteur centré + 4 actions rondes + carte « sortie possible » + trajet + activité façon relevé bancaire. Barre d'onglets translucide en bas. */
@@ -54,17 +54,16 @@ svg.i{width:20px;height:20px;fill:none;stroke:currentColor;stroke-width:1.9;stro
 .hello small{font-size:12px;color:var(--muted)}
 .hello b{font-size:16px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .ptitle{margin:0;font-size:30px;font-weight:700;letter-spacing:-.025em;line-height:1.1}
-.ava{width:38px;height:38px;border-radius:19px;background:var(--fg);display:flex;align-items:center;justify-content:center;flex:none}
-.wheel{width:28px;height:28px}
-.wheel .rim{fill:none;stroke:var(--bg);stroke-width:7}
-.wheel .arm{stroke:var(--bg);stroke-width:3.5;opacity:.55}
-.wheel .spring{fill:none;stroke:var(--bg);stroke-width:3;stroke-linecap:round}
-.wheel .hub{fill:var(--bg)}
-.wheel g.rot{transform-origin:50px 50px}
-.wheel.on g.rot{animation:swing 1.6s cubic-bezier(.45,0,.55,1) infinite alternate}
-.wheel.on .spring{animation:breathe 1.6s cubic-bezier(.45,0,.55,1) infinite alternate;transform-origin:50px 50px}
-@keyframes swing{from{transform:rotate(-135deg)}to{transform:rotate(135deg)}}
-@keyframes breathe{from{transform:rotate(-20deg) scale(.94)}to{transform:rotate(20deg) scale(1.04)}}
+/* logo « B. » : les points s'animent quand on est en poste */
+.ava{width:40px;height:40px;border-radius:11px;background:var(--card);overflow:hidden;flex:none;box-shadow:0 1px 3px rgba(0,0,0,.06)}
+.mark{display:block;width:40px;height:40px}
+.mark .b{fill:var(--fg)}
+.mark circle{fill:var(--accent)}
+.mark .d1{fill-opacity:.28} .mark .d2{fill-opacity:.55}
+.mark.on .d1,.mark.on .d2,.mark.on .d3{animation:blink 1.8s ease-in-out infinite}
+.mark.on .d2{animation-delay:.2s} .mark.on .d3{animation-delay:.4s}
+@keyframes blink{0%,100%{fill-opacity:var(--o,1)}35%{fill-opacity:.15}}
+.mark .d1{--o:.28} .mark .d2{--o:.55}
 .status{height:30px;padding:0 12px;border-radius:15px;background:var(--card);display:flex;align-items:center;gap:6px;font-size:12px;font-weight:600;white-space:nowrap;flex:none}
 .dot{width:8px;height:8px;border-radius:4px;background:var(--faint)}
 .dot.on{background:#34C759} .dot.pause{background:#FF9F0A}
@@ -247,15 +246,11 @@ svg.i{width:20px;height:20px;fill:none;stroke:currentColor;stroke-width:1.9;stro
   <header class="top">
     <div class="hello" id="hello">
       <div class="ava">
-        <svg class="wheel" id="wheel" viewBox="0 0 100 100" aria-hidden="true">
-          <g class="rot">
-            <circle class="rim" cx="50" cy="50" r="42"/>
-            <line class="arm" x1="50" y1="50" x2="50" y2="8"/>
-            <line class="arm" x1="50" y1="50" x2="86.4" y2="71"/>
-            <line class="arm" x1="50" y1="50" x2="13.6" y2="71"/>
-          </g>
-          <path class="spring" d="M50 50 m0 -6 a6 6 0 1 1 -0.1 0 M50 50 m0 -13 a13 13 0 1 1 -0.1 0 M50 50 m0 -21 a21 21 0 1 1 -12 3.5"/>
-          <circle class="hub" cx="50" cy="50" r="6"/>
+        <svg class="mark" id="wheel" viewBox="0 0 100 100" aria-hidden="true">
+          <path class="b" fill-rule="evenodd" transform="translate(14.5 28)" d="M0 0H21C31 0 36.5 5 36.5 12C36.5 17 33.5 20.5 29 21.6C35 22.6 39 27 39 33.5C39 40.5 33 44 23 44H0Z M10.5 8H19.5C24 8 26 9.8 26 12.6C26 15.4 24 17.6 19.5 17.6H10.5Z M10.5 25.2H21C26 25.2 28.3 27.4 28.3 30.8C28.3 34.3 26 36.2 21 36.2H10.5Z"/>
+          <circle class="d1" cx="60" cy="65.6" r="3"/>
+          <circle class="d2" cx="68.5" cy="65.6" r="4.3"/>
+          <circle class="d3" cx="79.5" cy="65.6" r="6.4"/>
         </svg>
       </div>
       <div class="t"><small id="date"></small><b id="greet">Balancier.</b></div>
@@ -575,7 +570,7 @@ svg.i{width:20px;height:20px;fill:none;stroke:currentColor;stroke-width:1.9;stro
     // en-tête
     const name = (s.name || "").trim();
     $("date").textContent = cap(JL[now.getDay()]) + " " + now.getDate() + " " + MOIS[now.getMonth()];
-    $("greet").textContent = name ? (now.getHours() >= 18 ? "Bonsoir " : "Bonjour ") + name : "Balancier.";
+    $("greet").innerHTML = name ? (now.getHours() >= 18 ? "Bonsoir " : "Bonjour ") + esc(name) : 'Balancier<span style="color:var(--accent)">.</span>';
     let st;
     if (c && c.absence) st = `<span class="dot"></span>${TYPES[rec.type]}${rec.half ? " ½" : ""}`;
     else if (inside) st = `<span class="dot on"></span>En poste · ${hm(c.raw)}`;
