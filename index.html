@@ -277,6 +277,69 @@ details.more[open] summary{border-bottom:1px solid var(--sep)}
 .avatar{width:48px;height:48px;border-radius:24px;background:var(--accent-soft);color:var(--accent-ink);display:flex;align-items:center;justify-content:center;font-weight:700;font-size:17px;flex:none}
 .link{border:0;background:none;color:var(--accent-ink);font-weight:600;font-size:15px;padding:8px;align-self:center}
 .unit{font-size:.5em;color:var(--muted);letter-spacing:-.01em;font-weight:600}
+/* accueil en conversation */
+.onb.chatmode{padding:0;overflow:hidden}
+.onb.leaving{animation:fadeOut .32s ease both}
+@keyframes fadeOut{to{opacity:0;transform:scale(.98)}}
+.chat{display:flex;flex-direction:column;height:100%;max-width:560px;margin:0 auto;width:100%}
+.chat-top{display:grid;grid-template-columns:44px 1fr 44px;align-items:center;padding:calc(env(safe-area-inset-top,0px) + 6px) max(10px,env(safe-area-inset-right,0px)) 8px max(10px,env(safe-area-inset-left,0px));background:var(--bar-bg);-webkit-backdrop-filter:saturate(180%) blur(20px);backdrop-filter:saturate(180%) blur(20px)}
+.chat-back{border:0;background:none;font-size:34px;line-height:1;color:var(--accent-ink);width:44px;height:44px;padding:0 0 4px}
+.chat-id{display:flex;flex-direction:column;align-items:center;gap:1px}
+.chat-ava{width:36px;height:36px;border-radius:10px;overflow:hidden;box-shadow:0 1px 4px rgba(0,0,0,.12);margin-bottom:3px}
+.chat-ava svg{width:36px;height:36px;display:block}
+.chat-id b{font-size:13px;font-weight:600}
+.chat-id small{font-size:11px;color:var(--muted)}
+.progress{height:2px;background:var(--hair)}
+.progress i{display:block;height:100%;width:0;background:var(--accent);transition:width .5s var(--ease)}
+.thread{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:18px max(14px,env(safe-area-inset-right,0px)) 14px max(14px,env(safe-area-inset-left,0px));display:flex;flex-direction:column;gap:4px}
+.msg{max-width:84%;padding:9px 14px;font-size:16px;line-height:1.38;border-radius:20px;animation:msgIn .4s var(--ease) both;overflow-wrap:anywhere;transform-origin:bottom left}
+.msg.bot{align-self:flex-start;background:var(--card);color:var(--fg);border-bottom-left-radius:6px}
+.msg.bot + .msg.bot{border-top-left-radius:6px}
+.msg.me{align-self:flex-end;background:var(--accent);color:var(--on-accent);border-bottom-right-radius:6px;margin:10px 0;transform-origin:bottom right}
+.msg.typing{display:flex;gap:4px;padding:14px 16px}
+.msg.typing i{width:7px;height:7px;border-radius:4px;background:var(--faint);animation:dotUp 1s ease-in-out infinite}
+.msg.typing i:nth-child(2){animation-delay:.15s} .msg.typing i:nth-child(3){animation-delay:.3s}
+@keyframes msgIn{from{opacity:0;transform:translateY(10px) scale(.94)}}
+@keyframes dotUp{0%,70%,100%{opacity:.35;transform:none}35%{opacity:1;transform:translateY(-3px)}}
+.recap{display:flex;flex-direction:column;margin:2px 0 6px;min-width:220px}
+.recap div{display:flex;justify-content:space-between;gap:14px;padding:6px 0;border-bottom:1px solid var(--sep);font-size:14px}
+.recap div:last-child{border-bottom:0}
+.recap span{color:var(--muted)}
+.recap b{font-weight:600;text-align:right}
+.msg small{color:var(--muted);font-size:13px}
+.composer{padding:12px max(14px,env(safe-area-inset-right,0px)) calc(env(safe-area-inset-bottom,0px) + 14px) max(14px,env(safe-area-inset-left,0px));background:var(--bar-bg);-webkit-backdrop-filter:saturate(180%) blur(20px);backdrop-filter:saturate(180%) blur(20px);border-top:.5px solid var(--hair);display:flex;flex-direction:column;gap:10px;max-height:58%;overflow-y:auto}
+.composer:empty{padding:0 0 env(safe-area-inset-bottom,0px);border-top:0}
+.composer.show{animation:compIn .38s var(--ease) both}
+@keyframes compIn{from{opacity:0;transform:translateY(18px)}}
+.c-row{display:flex;gap:8px;align-items:center}
+.c-input{flex:1;min-width:0;height:46px;border-radius:23px;border:1px solid var(--hair);background:var(--card);padding:0 18px;font-size:17px;color:var(--fg)}
+.c-input:focus{outline:none;border-color:var(--accent)}
+.c-send{flex:none;width:46px;height:46px;border-radius:23px;border:0;background:var(--accent);color:var(--on-accent);display:flex;align-items:center;justify-content:center;transition:transform .18s var(--ease)}
+.c-send:active{transform:scale(.92)}
+.c-send svg.i{width:20px;height:20px;stroke-width:2.4}
+.c-opts{display:flex;flex-wrap:wrap;gap:8px;justify-content:flex-end}
+.c-opt{border:1.5px solid var(--accent);background:var(--card);color:var(--accent-ink);border-radius:20px;padding:9px 16px;font-size:15px;font-weight:600;transition:transform .18s var(--ease),background-color .2s,color .2s}
+.c-opt:active{transform:scale(.95)}
+.c-opt.on{background:var(--accent);color:var(--on-accent)}
+.c-quick{justify-content:center}
+.c-quick .c-opt{border-color:var(--hair);color:var(--fg);padding:6px 13px;font-size:14px}
+.c-cards{display:flex;flex-direction:column;gap:8px}
+.c-card{display:flex;align-items:center;gap:12px;background:var(--card);border:1.5px solid transparent;border-radius:16px;padding:10px 12px;text-align:left;color:inherit;transition:transform .18s var(--ease),border-color .2s}
+.c-card:active{transform:scale(.985)}
+.c-card.on{border-color:var(--accent)}
+.c-card .it-m small{line-height:1.3}
+.c-num{display:flex;align-items:center;justify-content:center;gap:16px}
+.c-num > button{width:48px;height:48px;border-radius:24px;border:0;background:var(--card);font-size:26px;line-height:1;color:var(--fg);flex:none;transition:transform .18s var(--ease)}
+.c-num > button:active{transform:scale(.9)}
+.c-num > span{display:flex;align-items:baseline;gap:6px}
+.c-num input{width:120px;text-align:right;font-size:36px;font-weight:700;letter-spacing:-.03em;border:0;background:none;color:var(--fg);font-variant-numeric:tabular-nums;padding:0}
+.c-num input:focus{outline:none}
+.c-unit{font-size:16px;color:var(--muted);font-weight:600;min-width:40px}
+.c-time{width:100%;height:58px;border:0;border-radius:16px;background:var(--card);font-size:30px;font-weight:700;text-align:center;color:var(--fg);font-variant-numeric:tabular-nums}
+.composer .days{padding:2px 0}
+.c-skip{border:0;background:none;color:var(--muted);font-size:15px;font-weight:500;padding:2px;align-self:center}
+.c-err{color:var(--neg);font-size:14px;text-align:center;margin:0}
+@media (prefers-reduced-motion:reduce){.msg,.composer.show{animation-name:fadeOnly}}
 /* mouvement : court, doux, jamais tape-à-l'œil */
 :root{--ease:cubic-bezier(.22,.8,.24,1)}
 .anim-up{animation:viewUp .34s var(--ease) both}
@@ -410,7 +473,7 @@ button.item:active{opacity:.5}
 <script>
 (() => {
   const LS_KEY = "pointage.v1";
-  const APP_VERSION = "1.5 · animations";
+  const APP_VERSION = "1.6 · accueil en conversation";
   const clone = o => JSON.parse(JSON.stringify(o));
   const FULL = { GE: 2520, FR: 2100, none: 2400 };   // temps plein par semaine (min) selon la région
   const DEFAULT_SETTINGS = {
@@ -1607,78 +1670,204 @@ button.item:active{opacity:.5}
     $("pf-save").onclick = () => { Object.assign(s, { name: $("pf-first").value.trim(), lastName: $("pf-last").value.trim(), company: $("pf-co").value.trim(), holidays: region }); lsWrite(); closeSheet(); render(); renderSettings(); toast("Profil enregistré"); };
   }
 
-  // ---------- accueil (premier lancement) ----------
+  // ---------- accueil (premier lancement) : une conversation ----------
+  const SHIFT_PRESETS = {
+    m: { id: "m", name: "Matin", s: 360, e: 840 }, a: { id: "a", name: "Après-midi", s: 840, e: 1320 },
+    n: { id: "n", name: "Nuit", s: 1320, e: 360 }, j: { id: "j", name: "Journée", s: 480, e: 1020 }
+  };
+  const fmtNum = v => String(+(+v).toFixed(2)).replace(".", ",");
   function openOnboarding() {
     const d = draftFrom(state.settings);
     if (!state.settings.onboarded) { d.offered = 0; d.minOut = null; }
-    let step = 0;
-    const STEPS = 6;
-    const box = $("onb"); box.hidden = false;
-    const go = n => { const dir = n > step ? "anim-r" : "anim-l"; step = n; draw(); box.scrollTop = 0; animIn(box.querySelector(".onb-in"), dir); };
-    function draw() {
-      const y = box.scrollTop;
-      const dots = `<div class="steps">${Array.from({ length: STEPS }, (_, i) => `<i class="${i === step ? "on" : ""}"></i>`).join("")}</div>`;
-      let body = "", next = "Continuer", back = step > 0;
-      if (step === 0) {
-        body = `<div class="hero-mark">${MARK}</div>
-          <h2 style="text-align:center">Bienvenue sur Balancier<span style="color:var(--accent)">.</span></h2>
-          <p class="lead" style="text-align:center">Pointe tes heures, suis ton compteur, sache à quelle heure tu peux partir. Le tout réglé sur ton type d'horaires.</p>
-          <p class="note" style="text-align:center">Tout reste sur ton téléphone. Pas de compte, pas de pub.</p>`;
-        next = "Commencer";
-      } else if (step === 1) {
-        body = `<h2>Faisons connaissance</h2><p class="lead">Pour te dire bonjour et personnaliser tes exports.</p>
-          <div class="list">
-            <label class="item"><span>Prénom</span><input type="text" id="ob-first" value="${esc(d.name)}" autocomplete="given-name" placeholder="Prénom"></label>
-            <label class="item"><span>Nom</span><input type="text" id="ob-last" value="${esc(d.lastName)}" autocomplete="family-name" placeholder="Facultatif"></label>
-            <label class="item"><span>Entreprise</span><input type="text" id="ob-co" value="${esc(d.company)}" autocomplete="organization" placeholder="Facultatif"></label>
-          </div><p class="err" id="ob-err" hidden></p>`;
-      } else if (step === 2) {
-        body = `<h2>Où travailles-tu ?</h2><p class="lead">Pour les jours fériés et la durée légale.</p>
-          <div class="choices">${Object.keys(REGIONS).map(r => `<button class="choice${d.region === r ? " on" : ""}${d.region === r && d._justR ? " just" : ""}" data-region="${r}"><span class="it-m"><b>${REGIONS[r].name}</b><small>${REGIONS[r].desc}</small></span><span class="radio"></span></button>`).join("")}</div>`;
-      } else if (step === 3) {
-        body = `<h2>Ton type d'horaires</h2><p class="lead">Tu pourras le changer à tout moment dans Réglages.</p>${typeChoices(d)}`;
-      } else if (step === 4) {
-        body = `<h2>${WORK[d.type].name}</h2><p class="lead">Les détails de ton planning.</p>${detailsHTML(d)}<p class="err" id="ob-err" hidden></p>`;
-      } else {
-        body = `<h2>Pauses et congés</h2><p class="lead">Pour que ton compteur colle à ton contrat.</p>
-          <div class="list">
-            <label class="item"><span>Pause de midi minimum (min)<small>Non payée</small></span><input type="number" inputmode="numeric" min="0" max="180" data-p="pauseMin" value="${d.pauseMin}" style="max-width:70px"></label>
-            <label class="item"><span>Pauses payées par jour (min)<small>Ex. 20 min offertes : 0 si aucune</small></span><input type="number" inputmode="numeric" min="0" max="120" data-p="offered" value="${d.offered}" style="max-width:70px"></label>
-            <label class="item"><span>Jours de congé par an</span><input type="number" inputmode="decimal" step="0.5" min="0" max="60" data-p="vacDays" value="${d.vacDays}" style="max-width:70px"></label>
-            ${d.type !== "forfait" ? `<label class="item"><span>Maximum par semaine (h)<small>Pour être prévenu</small></span><input type="number" inputmode="decimal" step="0.5" min="0" max="80" data-p="maxWeek" value="${d.maxWeek ? d.maxWeek / 60 : ""}" style="max-width:70px"></label>` : ""}
-          </div>
-          <div class="card" style="padding:4px 16px">
-            <div class="sum-line"><span>Profil</span><b>${esc([d.name, d.lastName].filter(Boolean).join(" ") || "—")}</b></div>
-            <div class="sum-line"><span>Horaires</span><b>${WORK[d.type].name}</b></div>
-            <div class="sum-line"><span>Fériés</span><b>${REGIONS[d.region].name}</b></div>
-          </div>`;
-        next = "C'est parti";
-      }
-      box.innerHTML = `<div class="onb-in">${dots}${body}
-        ${step === 0 ? `<button class="link" id="ob-import">J'ai déjà une sauvegarde</button>` : ""}
-        <div class="onb-nav">${back ? `<button class="ghost" id="ob-back">Retour</button>` : ""}<button class="cta" id="ob-next">${next}</button></div></div>`;
-      box.scrollTop = y;
-      const keepIdentity = () => { if ($("ob-first")) { d.name = $("ob-first").value; d.lastName = $("ob-last").value; d.company = $("ob-co").value; } };
-      box.querySelectorAll("[data-region]").forEach(b => b.onclick = () => {
-        d.region = b.dataset.region; d.full = FULL[d.region]; d.weekly = d.full; spread(d);
-        if (d.region === "FR") { d.maxWeek = 2880; }
-        d._justR = true; draw(); d._justR = false;
-      });
-      if (step === 3 || step === 4) bindDetails(box, d, draw);
-      box.querySelectorAll("[data-p]").forEach(i => i.addEventListener("change", () => { const x = parseFloat(String(i.value).replace(",", ".")); const f = i.dataset.p; d[f] = isNaN(x) ? (f === "maxWeek" ? 0 : d[f]) : (f === "maxWeek" ? Math.round(x * 60) : x); }));
-      if ($("ob-import")) $("ob-import").onclick = () => $("imp-any").click();
-      if ($("ob-back")) $("ob-back").onclick = () => { keepIdentity(); go(step - 1); };
-      $("ob-next").onclick = () => {
-        const err = m => { const e = $("ob-err"); if (e) { e.textContent = m; e.hidden = false; } };
-        if (step === 1) { keepIdentity(); if (!d.name.trim()) return err("Indique au moins ton prénom."); }
-        if (step === 4) { const e = checkDraft(d); if (e) return err(e); }
-        if (step < STEPS - 1) return go(step + 1);
-        box.querySelectorAll("[data-p]").forEach(i => i.dispatchEvent(new Event("change")));
-        applyDraft(d); box.hidden = true; box.innerHTML = ""; showTab("today");
-        toast(`Bienvenue, ${d.name.trim()} !`);
-      };
+    const box = $("onb");
+    box.classList.add("chatmode"); box.hidden = false;
+    box.innerHTML = `<div class="chat">
+      <div class="chat-top">
+        <button class="chat-back" id="cb-back" aria-label="Revenir à la question précédente">‹</button>
+        <div class="chat-id"><span class="chat-ava">${MARK}</span><b>Balancier<span style="color:var(--accent)">.</span></b><small id="cb-status">en ligne</small></div>
+        <span></span>
+      </div>
+      <div class="progress" aria-hidden="true"><i id="cb-prog"></i></div>
+      <div class="thread" id="cb-thread" aria-live="polite"></div>
+      <div class="composer" id="cb-comp"></div>
+    </div>`;
+    const thread = $("cb-thread"), comp = $("cb-comp"), reduce = window.matchMedia && matchMedia("(prefers-reduced-motion: reduce)").matches;
+    let idx = 0, busy = false;
+    const marks = [];   // nombre de bulles affichées une fois la question i posée
+    const first = () => esc(d.name.trim() || "toi");
+    const perDay = () => { const n = d.workdays.filter(Boolean).length; return n ? Math.round(d.weekly / n) : 0; };
+    const setType = t => {
+      d.type = t;
+      if (t === "partiel") { if (d.rate === 100) d.rate = 80; d.weekly = Math.round(d.full * d.rate / 100); spread(d); }
+      if (t === "variable") { d.weekly = d.full; spread(d); }
+      if (t === "fixe") d.fixed = d.workdays.map(w => w ? { s: d.fs, e: d.fe } : null);
+      if (t === "equipes" && !d.shifts.length) { d.shifts = [SHIFT_PRESETS.m, SHIFT_PRESETS.a, SHIFT_PRESETS.n].map(x => ({ ...x })); d.rotation = ["m", "a", "n"]; }
+    };
+    const daysStep = { id: "days", bot: () => ["Tu travailles quels jours ?"], ui: { type: "days" },
+      apply: v => { if (!v.some(Boolean)) return "Choisis au moins un jour."; d.workdays = v; if (d.type === "variable" || d.type === "partiel") spread(d); if (d.type === "fixe") d.fixed = d.workdays.map(w => w ? { s: d.fs, e: d.fe } : null); },
+      answer: v => cap(daysTxt(v)) };
+
+    function steps() {
+      const L = [
+        { id: "hello", bot: () => [state.settings.onboarded ? `Re-bonjour ${first()} ! On revoit tes réglages ensemble.` : "Salut ! Moi c'est Balancier.", "Je règle l'appli sur ton contrat. Ça prend une minute."],
+          ui: { type: "choices", options: [{ v: "go", label: "C'est parti" }, { v: "imp", label: "J'ai déjà une sauvegarde" }] },
+          apply: v => { if (v === "imp") { $("imp-any").click(); return "stay"; } }, answer: () => "C'est parti" },
+        { id: "first", bot: () => ["Comment tu t'appelles ?"], ui: { type: "text", value: () => d.name, placeholder: "Ton prénom", auto: "given-name" },
+          apply: v => { if (!v.trim()) return "Écris au moins ton prénom."; d.name = v.trim(); }, answer: v => esc(v.trim()) },
+        { id: "last", bot: () => [`Enchanté, ${first()} !`, "Et ton nom de famille ? C'est facultatif, il sert pour tes exports."], ui: { type: "text", value: () => d.lastName, placeholder: "Nom", auto: "family-name", skip: "Passer" },
+          apply: v => { d.lastName = (v || "").trim(); }, answer: v => v && v.trim() ? esc(v.trim()) : "Je passe" },
+        { id: "co", bot: () => ["Tu travailles dans quelle entreprise ?"], ui: { type: "text", value: () => d.company, placeholder: "Entreprise", auto: "organization", skip: "Je préfère ne pas dire" },
+          apply: v => { d.company = (v || "").trim(); }, answer: v => v && v.trim() ? esc(v.trim()) : "Je préfère ne pas dire" },
+        { id: "region", bot: () => [d.company ? `${esc(d.company)}, c'est noté. Et c'est où ?` : "Pas de souci. Tu travailles où ?"],
+          ui: { type: "cards", value: () => d.region, options: Object.keys(REGIONS).map(r => ({ v: r, label: REGIONS[r].name, desc: REGIONS[r].desc })) },
+          apply: v => { d.region = v; d.full = FULL[v]; if (d.type === "variable") { d.weekly = d.full; spread(d); } if (v === "FR" && d.maxWeek === 2700) d.maxWeek = 2880; }, answer: v => REGIONS[v].name },
+        { id: "type", bot: () => [d.region === "none" ? "D'accord, pas de jours fériés automatiques." : `Parfait, les jours fériés ${d.region === "GE" ? "genevois" : "français"} seront déjà dans ton calendrier.`, "Quel type d'horaires tu as ?"],
+          ui: { type: "cards", value: () => d.type, options: Object.keys(WORK).map(t => ({ v: t, label: WORK[t].name, desc: WORK[t].desc, ico: WORK[t].ico })) },
+          apply: v => setType(v), answer: v => WORK[v].name }
+      ];
+      if (d.type === "variable") L.push(
+        { id: "weekly", bot: () => ["Combien d'heures tu dois faire par semaine ?"], ui: { type: "number", value: () => +(d.weekly / 60).toFixed(2), min: 1, max: 60, step: 0.5, unit: "h", quick: [35, 40, 41, 42, 42.5] },
+          apply: v => { d.weekly = Math.round(v * 60); d.full = d.weekly; spread(d); }, answer: v => `${fmtNum(v)} h par semaine` },
+        daysStep,
+        { id: "win", bot: () => [`Ça fait ${hm(perDay())} par jour.`, "Tu peux arriver à partir de quelle heure le matin ?"], ui: { type: "time", value: () => clock(d.winStart) },
+          apply: v => { d.winStart = toMin(v) ?? d.winStart; }, answer: v => `Dès ${v}` },
+        { id: "minout", bot: () => ["Il y a une heure avant laquelle tu ne peux pas partir sans accord ?"], ui: { type: "time", value: () => clock(d.minOut ?? 945), skip: "Non, aucune" },
+          apply: v => { d.minOut = v ? toMin(v) : null; }, answer: v => v ? `Pas avant ${v}` : "Non, aucune" });
+      if (d.type === "partiel") L.push(
+        { id: "rate", bot: () => ["Tu travailles à combien de pourcent ?"], ui: { type: "number", value: () => d.rate, min: 10, max: 100, step: 5, unit: "%", quick: [50, 60, 70, 80, 90] },
+          apply: v => { d.rate = Math.round(v); d.weekly = Math.round(d.full * d.rate / 100); spread(d); }, answer: v => `${Math.round(v)} %` },
+        { id: "full", bot: () => ["Et un temps plein chez toi, c'est combien d'heures par semaine ?"], ui: { type: "number", value: () => +(d.full / 60).toFixed(2), min: 1, max: 60, step: 0.5, unit: "h", quick: [35, 40, 42] },
+          apply: v => { d.full = Math.round(v * 60); d.weekly = Math.round(d.full * d.rate / 100); spread(d); }, answer: v => `${fmtNum(v)} h` },
+        daysStep,
+        { id: "win", bot: () => [`Ça fait ${hm(d.weekly)} par semaine, soit ${hm(perDay())} par jour.`, "Tu peux arriver à partir de quelle heure ?"], ui: { type: "time", value: () => clock(d.winStart) },
+          apply: v => { d.winStart = toMin(v) ?? d.winStart; }, answer: v => `Dès ${v}` });
+      if (d.type === "fixe") L.push(
+        daysStep,
+        { id: "fs", bot: () => ["Tu commences à quelle heure ?"], ui: { type: "time", value: () => clock(d.fs) }, apply: v => { d.fs = toMin(v) ?? d.fs; d.fixed = d.fixed.map(x => x ? { s: d.fs, e: d.fe } : null); }, answer: v => v },
+        { id: "fe", bot: () => ["Et tu finis à quelle heure ?"], ui: { type: "time", value: () => clock(d.fe) },
+          apply: v => { const m = toMin(v); if (m == null || m === d.fs) return "L'heure de fin doit être différente du début."; d.fe = m; d.fixed = d.fixed.map(x => x ? { s: d.fs, e: d.fe } : null); }, answer: v => v });
+      if (d.type === "equipes") L.push(
+        { id: "shifts", bot: () => ["Quels postes tu fais ? Tu peux en choisir plusieurs."], ui: { type: "multi", value: () => d.shifts.map(x => x.id).filter(id => SHIFT_PRESETS[id]), options: Object.values(SHIFT_PRESETS).map(x => ({ v: x.id, label: `${x.name} · ${clock(x.s)}–${clock(x.e)}` })) },
+          apply: v => { if (!v.length) return "Choisis au moins un poste."; d.shifts = v.map(id => ({ ...SHIFT_PRESETS[id] })); d.rotation = [...v]; d.rotNow = 0; }, answer: v => v.map(id => SHIFT_PRESETS[id].name).join(", ") },
+        { id: "now", bot: () => d.shifts.length > 1 ? ["Ils tournent chaque semaine, dans cet ordre.", "Cette semaine, tu es de quel poste ?"] : ["Cette semaine, tu travailles ?"],
+          ui: { type: "choices", options: () => d.shifts.length > 1 ? d.shifts.map((x, i) => ({ v: String(i), label: x.name })) : [{ v: "0", label: "Oui" }] },
+          apply: v => { d.rotNow = +v; }, answer: v => d.shifts.length > 1 ? d.shifts[+v].name : "Oui" },
+        daysStep);
+      if (d.type === "forfait") L.push(
+        { id: "fdays", bot: () => ["Ton forfait, c'est combien de jours par an ?"], ui: { type: "number", value: () => d.forfaitDays, min: 1, max: 235, step: 1, unit: "jours", quick: [208, 210, 214, 218] },
+          apply: v => { d.forfaitDays = Math.round(v); }, answer: v => `${Math.round(v)} jours` },
+        daysStep);
+      L.push(
+        { id: "pause", bot: () => [d.type === "equipes" ? "Noté. Tu pourras ajuster les heures exactes de chaque poste dans Réglages." : "Super, ton planning est prêt.", "Ta pause repas dure au minimum combien de temps ?"],
+          ui: { type: "choices", value: () => String(d.pauseMin), options: [{ v: "30", label: "30 min" }, { v: "45", label: "45 min" }, { v: "60", label: "1 h" }, { v: "0", label: "Pas imposée" }] },
+          apply: v => { d.pauseMin = +v; }, answer: v => +v ? (+v === 60 ? "1 h" : `${v} min`) : "Pas imposée" },
+        { id: "offered", bot: () => ["Tu as des pauses payées dans la journée ? Par exemple 20 minutes offertes."],
+          ui: { type: "choices", value: () => String(d.offered || 0), options: [{ v: "0", label: "Non" }, { v: "15", label: "15 min" }, { v: "20", label: "20 min" }, { v: "30", label: "30 min" }] },
+          apply: v => { d.offered = +v; }, answer: v => +v ? `${v} min par jour` : "Non" },
+        { id: "vac", bot: () => ["Dernière question : tu as combien de jours de congé par an ?"], ui: { type: "number", value: () => d.vacDays, min: 0, max: 60, step: 0.5, unit: "jours", quick: [20, 25, 27, 30] },
+          apply: v => { d.vacDays = +v; }, answer: v => `${fmtNum(v)} jours` },
+        { id: "done", bot: () => [`Parfait, ${first()}. Voilà ce que j'ai retenu :`, recap()], ui: { type: "choices", options: [{ v: "ok", label: "Ouvrir Balancier" }] },
+          apply: () => finish(), answer: () => "Ouvrir Balancier" });
+      return L;
     }
-    draw();
+    function recap() {
+      const lines = [
+        ["Toi", esc([d.name, d.lastName].filter(Boolean).join(" ")) + (d.company ? ` · ${esc(d.company)}` : "")],
+        ["Fériés", REGIONS[d.region].name],
+        ["Horaires", WORK[d.type].name],
+        ["Planning", esc(d.type === "fixe" ? `${clock(d.fs)}–${clock(d.fe)} · ${daysTxt(d.workdays)}` : d.type === "equipes" ? d.shifts.map(x => x.name).join(", ") + " · " + daysTxt(d.workdays) : d.type === "forfait" ? `${d.forfaitDays} jours par an · ${daysTxt(d.workdays)}` : `${hm(d.weekly)} par semaine · ${daysTxt(d.workdays)}`)],
+        ["Pauses", (d.pauseMin ? `midi ${d.pauseMin} min` : "midi libre") + (d.offered ? ` · ${d.offered} min payées` : "")],
+        ["Congés", `${fmtNum(d.vacDays)} jours par an`]
+      ];
+      return `<div class="recap">${lines.map(([a, b]) => `<div><span>${a}</span><b>${b}</b></div>`).join("")}</div><small>Tout se modifie ensuite dans Réglages.</small>`;
+    }
+    function finish() {
+      applyDraft(d);
+      box.classList.add("leaving");
+      setTimeout(() => { box.hidden = true; box.classList.remove("leaving", "chatmode"); box.innerHTML = ""; showTab("today"); toast(`Bienvenue, ${d.name.trim()} !`); }, reduce ? 0 : 320);
+      return "stay";
+    }
+
+    const scrollDown = () => requestAnimationFrame(() => { thread.scrollTop = thread.scrollHeight; });
+    const bubble = (who, html) => { const el = document.createElement("div"); el.className = "msg " + who; el.innerHTML = html; thread.appendChild(el); scrollDown(); return el; };
+    const wait = ms => new Promise(r => setTimeout(r, reduce ? 0 : ms));
+    async function ask() {
+      const st = steps()[idx];
+      busy = true; comp.innerHTML = ""; comp.classList.remove("show");
+      $("cb-prog").style.width = (idx / (steps().length - 1) * 100).toFixed(1) + "%";
+      $("cb-back").style.visibility = idx > 0 ? "visible" : "hidden";
+      for (const m of st.bot()) {
+        $("cb-status").textContent = "écrit…";
+        const t = bubble("bot typing", "<i></i><i></i><i></i>");
+        await wait(Math.min(900, 380 + m.replace(/<[^>]+>/g, "").length * 9));
+        t.remove(); bubble("bot", m);
+        await wait(140);
+      }
+      $("cb-status").textContent = "en ligne";
+      marks[idx] = thread.children.length;
+      busy = false; drawComposer(st);
+    }
+    async function answer(st, v) {
+      if (busy) return;
+      const r = st.apply(v);
+      if (typeof r === "string" && r !== "stay") { const e = comp.querySelector(".c-err"); if (e) { e.textContent = r; e.hidden = false; } return; }
+      if (r === "stay" && st.id === "hello") return;
+      bubble("me", st.answer(v));
+      if (r === "stay") { comp.innerHTML = ""; return; }
+      idx++; await wait(200); ask();
+    }
+    function drawComposer(st) {
+      const u = st.ui, val = u.value ? u.value() : null;
+      const opts = typeof u.options === "function" ? u.options() : u.options;
+      const err = `<p class="c-err" hidden></p>`;
+      let h = "";
+      if (u.type === "choices" && opts.length === 1) h = `<button class="cta" data-v="${opts[0].v}">${opts[0].label}</button>`;
+      else if (u.type === "choices") h = `<div class="c-opts">${opts.map(o => `<button class="c-opt${val === o.v ? " on" : ""}" data-v="${o.v}">${o.label}</button>`).join("")}</div>`;
+      else if (u.type === "cards") h = `<div class="c-cards">${opts.map(o => `<button class="c-card${val === o.v ? " on" : ""}" data-v="${o.v}">${o.ico ? `<span class="ico blue">${ic(o.ico)}</span>` : ""}<span class="it-m"><b>${o.label}</b><small>${o.desc}</small></span></button>`).join("")}</div>`;
+      else if (u.type === "text") h = `${err}<div class="c-row"><input class="c-input" id="c-in" type="text" value="${esc(val || "")}" placeholder="${u.placeholder}" autocomplete="${u.auto}" enterkeyhint="send"><button class="c-send" id="c-go" aria-label="Envoyer"><svg class="i" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 19V5M6 11l6-6 6 6"/></svg></button></div>${u.skip ? `<button class="c-skip" id="c-skip">${u.skip}</button>` : ""}`;
+      else if (u.type === "number") h = `${err}<div class="c-num"><button id="c-minus" aria-label="Moins">−</button><span><input id="c-in" type="number" inputmode="decimal" step="${u.step}" min="${u.min}" max="${u.max}" value="${val}" aria-label="Valeur"><span class="c-unit">${u.unit}</span></span><button id="c-plus" aria-label="Plus">+</button></div><div class="c-opts c-quick">${u.quick.map(q => `<button class="c-opt" data-q="${q}">${fmtNum(q)}</button>`).join("")}</div><button class="cta" id="c-go">Valider</button>`;
+      else if (u.type === "time") h = `${err}<input class="c-time" id="c-in" type="time" value="${val}"><div class="row">${u.skip ? `<button class="ghost" id="c-skip">${u.skip}</button>` : ""}<button class="cta" id="c-go">Valider</button></div>`;
+      else if (u.type === "days") h = `${err}<div class="days">${WEEK.map(w => `<button data-dow="${w}" class="${d.workdays[w] ? "on" : ""}" aria-pressed="${!!d.workdays[w]}">${"DLMMJVS"[w]}</button>`).join("")}</div><button class="cta" id="c-go">Valider</button>`;
+      else if (u.type === "multi") h = `${err}<div class="c-opts">${opts.map(o => `<button class="c-opt${val.includes(o.v) ? " on" : ""}" data-m="${o.v}" aria-pressed="${val.includes(o.v)}">${o.label}</button>`).join("")}</div><button class="cta" id="c-go">Valider</button>`;
+      comp.innerHTML = h; comp.classList.add("show");
+      comp.querySelectorAll("[data-v]").forEach(b => b.onclick = () => answer(st, b.dataset.v));
+      const inp = $("c-in"), go = $("c-go"), skip = $("c-skip");
+      if (u.type === "text") {
+        go.onclick = () => answer(st, inp.value);
+        inp.addEventListener("keydown", e => { if (e.key === "Enter") { e.preventDefault(); answer(st, inp.value); } });
+        if (!val) setTimeout(() => { try { inp.focus({ preventScroll: true }); } catch (e) {} }, 60);
+      }
+      if (u.type === "number") {
+        const clamp = x => Math.min(u.max, Math.max(u.min, Math.round(x / u.step) * u.step));
+        const get = () => { const x = parseFloat(String(inp.value).replace(",", ".")); return isNaN(x) ? +val : x; };
+        $("c-minus").onclick = () => { inp.value = +clamp(get() - u.step).toFixed(2); };
+        $("c-plus").onclick = () => { inp.value = +clamp(get() + u.step).toFixed(2); };
+        comp.querySelectorAll("[data-q]").forEach(b => b.onclick = () => { inp.value = b.dataset.q; });
+        go.onclick = () => answer(st, clamp(get()));
+      }
+      if (u.type === "time") { go.onclick = () => answer(st, inp.value || val); }
+      if (skip) skip.onclick = () => answer(st, "");
+      if (u.type === "days") {
+        const sel = [...d.workdays];
+        comp.querySelectorAll("[data-dow]").forEach(b => b.onclick = () => { const w = +b.dataset.dow; sel[w] = !sel[w]; b.classList.toggle("on", sel[w]); b.setAttribute("aria-pressed", sel[w]); });
+        go.onclick = () => answer(st, sel);
+      }
+      if (u.type === "multi") {
+        const sel = new Set(val);
+        comp.querySelectorAll("[data-m]").forEach(b => b.onclick = () => { const v = b.dataset.m; sel.has(v) ? sel.delete(v) : sel.add(v); b.classList.toggle("on", sel.has(v)); b.setAttribute("aria-pressed", sel.has(v)); });
+        go.onclick = () => answer(st, Object.keys(SHIFT_PRESETS).filter(k => sel.has(k)));
+      }
+      scrollDown();
+    }
+    $("cb-back").onclick = () => {
+      if (busy || idx === 0) return;
+      idx--;
+      while (thread.children.length > marks[idx]) thread.lastChild.remove();
+      $("cb-prog").style.width = (idx / (steps().length - 1) * 100).toFixed(1) + "%";
+      $("cb-back").style.visibility = idx > 0 ? "visible" : "hidden";
+      drawComposer(steps()[idx]);
+    };
+    ask();
   }
 
   // ---------- Réglages ----------
@@ -1766,7 +1955,7 @@ button.item:active{opacity:.5}
         if (data.settings) state.settings = migrateSettings(data.settings, true);
         state.settings.onboarded = true;
         lsWrite();
-        $("onb").hidden = true; $("onb").innerHTML = "";
+        $("onb").hidden = true; $("onb").innerHTML = ""; $("onb").classList.remove("chatmode");
         if (tab === "set") renderSettings();
         render(); toast(plural(n, "journée") + " importée" + (n > 1 ? "s" : ""));
       } catch (err) { toast("Fichier non reconnu : choisis un export de Balancier."); }
