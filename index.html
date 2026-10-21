@@ -10,8 +10,8 @@
 <meta name="theme-color" content="#F5F5F7" id="meta-theme">
 <meta name="format-detection" content="telephone=no">
 <link rel="manifest" href="manifest.webmanifest">
-<link rel="apple-touch-icon" href="apple-touch-icon.png?v=2">
-<link rel="icon" type="image/png" href="favicon.png?v=2">
+<link rel="apple-touch-icon" href="apple-touch-icon.png?v=3">
+<link rel="icon" type="image/png" href="favicon.png?v=3">
 <title>Balancier.</title>
 <style>
 /* Layout (A1 · compteur façon néobanque): fond gris clair, cartes blanches très arrondies. Aujourd'hui = compteur centré + 4 actions rondes + carte « sortie possible » + trajet + activité façon relevé bancaire. Barre d'onglets translucide en bas. */
@@ -386,6 +386,52 @@ button.item:active{opacity:.5}
 .item.enter{animation:rowIn .45s var(--ease) both}
 @keyframes rowIn{from{opacity:0;transform:translateY(-6px)}}
 .steps i{transition:width .3s var(--ease),background-color .3s ease}
+/* relief : cartes légèrement bombées, reflet en haut, ombre douce teintée de violet */
+:root{
+  --bg:#F4F3F9; --card:#FFFFFF; --card2:#FBFAFF; --edge:rgba(107,78,255,.09);
+  --relief:inset 0 1px 0 rgba(255,255,255,1),inset 0 -3px 8px rgba(107,78,255,.045),0 1px 2px rgba(40,24,110,.06),0 14px 30px -16px rgba(60,38,170,.32);
+  --relief-sm:inset 0 1px 0 rgba(255,255,255,1),inset 0 -2px 5px rgba(107,78,255,.06),0 1px 2px rgba(40,24,110,.08),0 8px 16px -10px rgba(60,38,170,.34);
+  --pressed:inset 0 2px 5px rgba(60,38,170,.12),inset 0 -1px 0 rgba(255,255,255,.9);
+  --pink:#E07AD8;
+}
+:root[data-theme="dark"]{
+  --bg:#0B0A10; --card:#1B1A23; --card2:#16151D; --edge:rgba(170,150,255,.10);
+  --relief:inset 0 1px 0 rgba(255,255,255,.07),inset 0 -3px 8px rgba(0,0,0,.25),0 1px 2px rgba(0,0,0,.5),0 14px 30px -16px rgba(0,0,0,.9);
+  --relief-sm:inset 0 1px 0 rgba(255,255,255,.08),inset 0 -2px 5px rgba(0,0,0,.25),0 1px 2px rgba(0,0,0,.5),0 8px 16px -10px rgba(0,0,0,.9);
+  --pressed:inset 0 2px 6px rgba(0,0,0,.5),inset 0 -1px 0 rgba(255,255,255,.05);
+}
+.card,.list,.tile,.ghost,.rowcard,.choice,.c-card,.msg.bot,.status,.iconbtn,.ava,.chat-ava{
+  background:linear-gradient(180deg,var(--card) 0%,var(--card2) 100%);border:1px solid var(--edge);box-shadow:var(--relief)}
+.card,.list{border-radius:24px}
+.status,.iconbtn,.tile,.pill:not(.ok):not(.neg),.c-num > button,.x,.c-time,.c-input{box-shadow:var(--relief-sm)}
+.pill:not(.ok):not(.neg){background:linear-gradient(180deg,var(--card),var(--card2));border:1px solid var(--edge)}
+.act i{background:linear-gradient(180deg,var(--card),var(--card2));border:1px solid var(--edge);box-shadow:var(--relief-sm)}
+.act.primary i,.cta,.c-send,.msg.me,.chip.on,.c-opt.on,.days button.on{
+  background:linear-gradient(180deg,color-mix(in srgb,var(--accent) 78%,#fff) 0%,var(--accent) 100%);
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.28),0 10px 22px -10px color-mix(in srgb,var(--accent) 75%,transparent)}
+.act.primary i{border:0}
+.cta{border:1px solid color-mix(in srgb,var(--accent) 70%,#000 10%)}
+.x,.c-num > button{background:linear-gradient(180deg,var(--card),var(--card2));border:1px solid var(--edge)}
+.c-opt{background:linear-gradient(180deg,var(--card),var(--card2));box-shadow:var(--relief-sm)}
+.c-opt.on{border-color:transparent}
+.days button,.chip,.c-quick .c-opt{box-shadow:var(--pressed);background:var(--soft-in,var(--grey-soft))}
+.days button.on{box-shadow:inset 0 1px 0 rgba(255,255,255,.28),0 6px 14px -8px color-mix(in srgb,var(--accent) 80%,transparent)}
+.choice.on,.c-card.on{border-color:var(--accent);box-shadow:var(--relief),0 0 0 3px color-mix(in srgb,var(--accent) 16%,transparent)}
+.track{box-shadow:var(--pressed);background:var(--grey-soft)}
+.track i,.meter i,.progress i{background:linear-gradient(90deg,var(--accent),color-mix(in srgb,var(--accent) 45%,var(--pink)))}
+.track em{box-shadow:0 0 0 3px var(--accent),0 4px 10px -2px color-mix(in srgb,var(--accent) 60%,transparent)}
+.meter{box-shadow:var(--pressed);background:var(--grey-soft)}
+.seg{box-shadow:var(--pressed);background:var(--grey-soft)}
+.seg::before{background:linear-gradient(180deg,var(--card),var(--card2));box-shadow:var(--relief-sm)}
+.ico.blue{background:var(--accent-soft);color:var(--accent-ink)}
+.cta:active,.act.primary:active i{box-shadow:inset 0 2px 6px rgba(0,0,0,.18)}
+.ghost:active,.rowcard:active,.choice:active,.c-card:active,.iconbtn:active,.x:active{box-shadow:var(--pressed)}
+.act:active i{box-shadow:var(--pressed)}
+.tabbar{box-shadow:0 -10px 30px -18px rgba(60,38,170,.25)}
+.sheet{box-shadow:0 -20px 40px -20px rgba(40,24,110,.35)}
+:root[data-theme="dark"] .sheet{--card:#24232D;--card2:#1F1E27}
+.hero-v{background:linear-gradient(180deg,var(--fg) 30%,color-mix(in srgb,var(--fg) 70%,var(--accent)));-webkit-background-clip:text;background-clip:text;color:transparent}
+.hero-v.tick{color:transparent}
 /* « Réduire les animations » : pas de mouvement, seulement des fondus */
 @keyframes fadeOnly{from{opacity:0}}
 @media (prefers-reduced-motion:reduce){
@@ -473,7 +519,7 @@ button.item:active{opacity:.5}
 <script>
 (() => {
   const LS_KEY = "pointage.v1";
-  const APP_VERSION = "1.6 · accueil en conversation";
+  const APP_VERSION = "1.7 · relief violet";
   const clone = o => JSON.parse(JSON.stringify(o));
   const FULL = { GE: 2520, FR: 2100, none: 2400 };   // temps plein par semaine (min) selon la région
   const DEFAULT_SETTINGS = {
@@ -487,7 +533,7 @@ button.item:active{opacity:.5}
     days: [false, true, true, true, true, true, false], // équipes / forfait : jours travaillés
     forfaitDays: 218,
     pauseMin: 30, offered: 0, winStart: 390, clampStart: false, minOut: null,
-    accent: "bleu", theme: "auto", holidays: "GE",
+    accent: "violet", accentV: 2, theme: "auto", holidays: "GE",
     vacDays: 25, maxWeek: 2700, remoteCap: 0,
     transit: { home: "", work: "", margin: 5 }
   };
@@ -553,7 +599,7 @@ button.item:active{opacity:.5}
     brief: '<rect x="3" y="7" width="18" height="13" rx="2.5"/><path d="M9 7V5a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2v2M3 13h18"/>'
   };
   const ic = k => `<svg class="i" viewBox="0 0 24 24" aria-hidden="true">${IC[k]}</svg>`;
-  const MARK = `<svg viewBox="0 0 100 100" aria-hidden="true"><rect width="100" height="100" fill="#FFFFFF"/><path fill="#1D1D1F" fill-rule="evenodd" transform="translate(14.5 28)" d="M0 0H21C31 0 36.5 5 36.5 12C36.5 17 33.5 20.5 29 21.6C35 22.6 39 27 39 33.5C39 40.5 33 44 23 44H0Z M10.5 8H19.5C24 8 26 9.8 26 12.6C26 15.4 24 17.6 19.5 17.6H10.5Z M10.5 25.2H21C26 25.2 28.3 27.4 28.3 30.8C28.3 34.3 26 36.2 21 36.2H10.5Z"/><circle cx="60" cy="65.6" r="3" fill="#0071E3" fill-opacity=".28"/><circle cx="68.5" cy="65.6" r="4.3" fill="#0071E3" fill-opacity=".55"/><circle cx="79.5" cy="65.6" r="6.4" fill="#0071E3"/></svg>`;
+  const MARK = `<svg viewBox="0 0 100 100" aria-hidden="true"><rect width="100" height="100" fill="#FFFFFF"/><path fill="#1D1D1F" fill-rule="evenodd" transform="translate(14.5 28)" d="M0 0H21C31 0 36.5 5 36.5 12C36.5 17 33.5 20.5 29 21.6C35 22.6 39 27 39 33.5C39 40.5 33 44 23 44H0Z M10.5 8H19.5C24 8 26 9.8 26 12.6C26 15.4 24 17.6 19.5 17.6H10.5Z M10.5 25.2H21C26 25.2 28.3 27.4 28.3 30.8C28.3 34.3 26 36.2 21 36.2H10.5Z"/><circle cx="60" cy="65.6" r="3" style="fill:var(--accent)" fill-opacity=".28"/><circle cx="68.5" cy="65.6" r="4.3" style="fill:var(--accent)" fill-opacity=".55"/><circle cx="79.5" cy="65.6" r="6.4" style="fill:var(--accent)"/></svg>`;
 
   const TYPES = { work: "Travail", conge: "Congé", rtt: "RTT", maladie: "Maladie", recup: "Récupération", ferie: "Férié" };
   const TYPE_ICO = { conge: ["sun", "blue"], rtt: ["sun", "violet"], maladie: ["plus", "red"], recup: ["loop", "green"], ferie: ["flag", ""], work: ["clock", ""] };
@@ -575,9 +621,9 @@ button.item:active{opacity:.5}
   const meaningful = r => r.punches.length || r.type !== "work" || r.remote || r.shift;
 
   const ACCENTS = {
+    violet: { name: "Violet", light: ["#6B4EFF", "#EFEBFF", "#4B32C8", "#FFFFFF"], dark: ["#8E7BFF", "rgba(142,123,255,.2)", "#B9ADFF", "#FFFFFF"] },
     bleu:   { name: "Bleu",   light: ["#0071E3", "#E8F1FC", "#0058B0", "#FFFFFF"], dark: ["#0A84FF", "rgba(10,132,255,.18)", "#64B0FF", "#FFFFFF"] },
     noir:   { name: "Noir",   light: ["#1D1D1F", "#ECECEE", "#1D1D1F", "#FFFFFF"], dark: ["#F5F5F7", "rgba(255,255,255,.12)", "#F5F5F7", "#000000"] },
-    violet: { name: "Violet", light: ["#5E5CE6", "#EEEDFB", "#3A33A3", "#FFFFFF"], dark: ["#7D7AFF", "rgba(125,122,255,.2)", "#A5A1FF", "#FFFFFF"] },
     vert:   { name: "Vert",   light: ["#1A7F37", "#E3F3E7", "#1A7F37", "#FFFFFF"], dark: ["#30D158", "rgba(48,209,88,.16)", "#30D158", "#000000"] }
   };
 
@@ -586,7 +632,8 @@ button.item:active{opacity:.5}
     if (!Array.isArray(out.sched) || out.sched.length !== 7) { const d = (s && s.daily) || 504; out.sched = [0, d, d, d, d, d, 0]; }
     const ot = (s && s.transit) || {};
     out.transit = { home: ot.home || ot.to || "", work: ot.work || ot.from || "", margin: ot.margin ?? ot.walk ?? 5 };
-    if (!ACCENTS[out.accent]) out.accent = "bleu";
+    if (!ACCENTS[out.accent]) out.accent = "violet";
+    if (!(out.accentV >= 2)) { if (out.accent === "bleu") out.accent = "violet"; out.accentV = 2; }   // le violet devient la couleur de Balancier
     if (!WORK[out.type]) out.type = "variable";
     if (s && s.onboarded === undefined && existingUser) out.onboarded = true;   // utilisateurs d'avant les profils
     if (!Array.isArray(out.days) || out.days.length !== 7) out.days = clone(DEFAULT_SETTINGS.days);
@@ -614,7 +661,7 @@ button.item:active{opacity:.5}
     if (root.dataset.theme !== mode) root.dataset.theme = mode;
     const a = (ACCENTS[state.settings.accent] || ACCENTS.bleu)[mode];
     ["--accent", "--accent-soft", "--accent-ink", "--on-accent"].forEach((v, i) => root.style.setProperty(v, a[i]));
-    const mt = document.getElementById("meta-theme"); if (mt) mt.content = mode === "dark" ? "#000000" : "#F5F5F7";
+    const mt = document.getElementById("meta-theme"); if (mt) mt.content = mode === "dark" ? "#0B0A10" : "#F4F3F9";
   }
   if (mq && mq.addEventListener) mq.addEventListener("change", () => { render(); if (tab === "set") renderSettings(); });
 
