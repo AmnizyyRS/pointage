@@ -10,7 +10,7 @@ Balancier. est une appli de pointage **pour le salarié** (pas pour l'employeur)
 | Fichier | Rôle |
 |---|---|
 | `index.html` | Toute l'appli : HTML + CSS + JS dans un seul fichier, sans dépendance ni build |
-| `sw.js` | Service worker : réseau d'abord **sans cache HTTP** (`cache: "no-store"`), copie locale pour le hors-ligne |
+| `sw.js` | Service worker : réseau d'abord **sans cache HTTP** (`cache: "no-store"`), copie locale si le réseau ne répond pas en 2 s ; seulement pour les fichiers de l'appli (pas l'API des transports) |
 | `manifest.webmanifest` | Nom « Balancier. », couleurs, icônes |
 | `apple-touch-icon.png`, `icon-192.png`, `icon-512.png`, `favicon.png`, `icon.svg` | Icône « B. » : B noir dessiné sur mesure + 3 points violets (#6B4EFF) en traînée |
 
