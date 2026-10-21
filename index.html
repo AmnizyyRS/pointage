@@ -529,7 +529,7 @@ button.item:active{opacity:.5}
 <script>
 (() => {
   const LS_KEY = "pointage.v1";
-  const APP_VERSION = "2.0 · règles par journée, oublis, sauvegarde";
+  const APP_VERSION = "2.1 · résumé de la semaine";
   const clone = o => JSON.parse(JSON.stringify(o));
   const FULL = { GE: 2520, FR: 2100, none: 2400 };   // temps plein par semaine (min) selon la région
   const DEFAULT_SETTINGS = {
@@ -546,7 +546,8 @@ button.item:active{opacity:.5}
     accent: "violet", accentV: 2, theme: "auto", holidays: "GE",
     vacDays: 25, maxWeek: 2700, remoteCap: 0,
     transit: { home: "", work: "", margin: 5 },
-    lastExport: null, backupSnooze: null                // sauvegarde : date du dernier export, rappel repoussé jusqu'à
+    lastExport: null, backupSnooze: null,               // sauvegarde : date du dernier export, rappel repoussé jusqu'à
+    weekSeen: null                                      // résumé de la semaine : lundi de la dernière semaine vue
   };
   let state = { settings: clone(DEFAULT_SETTINGS), days: {}, past: [] };
 
@@ -605,6 +606,7 @@ button.item:active{opacity:.5}
     clock: '<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/>',
     stop: '<rect x="6" y="6" width="12" height="12" rx="2.5"/>',
     share: '<path d="M12 15V3M7 8l5-5 5 5"/><path d="M5 13v6a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-6"/>',
+    trend: '<path d="M3 17l5-5 4 3 8-8"/><path d="M15 7h5v5"/>',
     home: '<path d="M4 11l8-7 8 7"/><path d="M6 9.5V20h12V9.5"/>',
     pie: '<circle cx="12" cy="12" r="9"/><path d="M12 3v9h9"/>',
     grid: '<rect x="4" y="4" width="16" height="16" rx="3"/><path d="M4 10h16M10 10v10"/>',
@@ -1158,6 +1160,19 @@ button.item:active{opacity:.5}
       $("al-ok").onclick = () => { const before = clone(r); saveDay(k, { ...r, pause: false, punches: [...r.punches, hhmm(out)] }); toast(`Sortie du ${short(parseKey(k))} à ${clock(out)}`, () => saveDay(k, before)); };
       return;
     }
+    // résumé de la semaine passée : du lundi au mercredi, tant qu'il n'a pas été vu
+    const lastMon = dateKey(addDays(mondayOf(new Date()), -7));
+    if ([1, 2, 3].includes(new Date().getDay()) && s.weekSeen !== lastMon) {
+      const w = weekStats(parseKey(lastMon));
+      if (w.worked) {
+        box.innerHTML = `<div class="al-top"><span class="ico violet">${ic("trend")}</span><span class="it-m"><b>Ta semaine ${w.num} · ${w.head}</b><small>${esc(w.line)}</small></span></div>
+          <div class="row"><button class="ghost sm" id="al-wok">OK</button><button class="cta sm" id="al-week">Voir le résumé</button></div>`;
+        box.hidden = false;
+        $("al-wok").onclick = () => { s.weekSeen = lastMon; saveSettings(); };
+        $("al-week").onclick = () => { s.weekSeen = lastMon; saveSettings(); openWeek(parseKey(lastMon)); };
+        return;
+      }
+    }
     // rappel de sauvegarde : jamais exporté après une semaine de pointages, ou dernière copie il y a plus de 14 jours
     const keys = Object.keys(state.days).sort();
     const age = s.lastExport ? daysSince(s.lastExport) : null;
@@ -1171,6 +1186,92 @@ button.item:active{opacity:.5}
       return;
     }
     box.hidden = true; box.innerHTML = "";
+  }
+
+  // ---------- résumé de la semaine ----------
+  function weekStats(mon) {
+    const ak = activeKey(), keys = weekKeys(mon), F = isForfait(), t = totalsOf(keys, ak);
+    const days = [], ins = [], outs = []; let plan = 0, gaps = 0;
+    keys.forEach(k => {
+      const r = state.days[k], c = r && calcK(k, ak), tgt = targetFor(k, r || { type: "work" });
+      plan += tgt;
+      const worked = !!(c && c.complete && !c.absence && r.punches.length);
+      if (worked) { ins.push({ k, m: c.first }); outs.push(c.last); gaps += c.gaps; }
+      days.push({ k, d: parseKey(k), net: worked ? c.net : 0, abs: !!(c && c.absence), tgt });
+    });
+    const avg = a => a.length ? a.reduce((x, y) => x + y, 0) / a.length : null;
+    const early = ins.length ? ins.reduce((a, b) => b.m < a.m ? b : a) : null;
+    const shown = days.slice(5).some(x => x.net || x.tgt) ? days : days.slice(0, 5);
+    const w = { mon, num: isoWeek(mon), dates: `${short(mon)} – ${short(shown[shown.length - 1].d)}`, F, worked: ins.length, net: t.worked, plan, bal: t.bal,
+      inAvg: avg(ins.map(x => x.m)), outAvg: avg(outs), pauseAvg: ins.length ? gaps / ins.length : 0, early, days: shown };
+    w.head = F ? plural(w.worked, "jour") : signed(w.bal);
+    const fact = early && !F ? ` Arrivée la plus matinale : ${JL[parseKey(early.k).getDay()]} à ${clock(early.m)}.` : "";
+    w.line = F ? `${hm(w.net / Math.max(1, w.worked))} de présence par jour en moyenne.`
+      : (w.bal >= 60 ? `Belle semaine : ${signed(w.bal)} sur ton compteur.` : w.bal >= 0 ? "Semaine pile dans les clous." : `Il te manque ${hm(-w.bal)} : ça se rattrape.`) + fact;
+    return w;
+  }
+  // image à partager (1080 × 1350, toujours en clair) : solde, barres des jours, moyennes, logo
+  function weekImage(w) {
+    const W = 1080, H = 1350, cv = document.createElement("canvas"); cv.width = W; cv.height = H;
+    const g = cv.getContext("2d"), A = (ACCENTS[state.settings.accent] || ACCENTS.violet).light[0];
+    const font = (wt, px) => `${wt} ${px}px -apple-system, "SF Pro Display", system-ui, sans-serif`;
+    const FG = "#1D1D1F", MUTED = "#6E6E73", X = 140, R = 940;
+    g.fillStyle = "#F4F3F9"; g.fillRect(0, 0, W, H);
+    g.save(); g.shadowColor = "rgba(107,78,255,.14)"; g.shadowBlur = 70; g.shadowOffsetY = 24; g.fillStyle = "#FFFFFF";
+    g.beginPath(); g.roundRect(60, 60, 960, 1230, 64); g.fill(); g.restore();
+    g.textBaseline = "alphabetic";
+    g.font = font(600, 40); g.fillStyle = MUTED; g.textAlign = "left"; g.fillText(`Semaine ${w.num}`, X, 170);
+    g.textAlign = "right"; g.fillText(w.dates, R, 170);
+    g.textAlign = "left"; g.font = font(700, 168); g.fillStyle = w.F ? FG : w.bal >= 0 ? "#1A7F37" : "#C9341F"; g.fillText(w.head, X - 6, 350);
+    g.font = font(500, 40); g.fillStyle = MUTED; g.fillText(w.F ? "travaillés cette semaine" : "sur mon compteur d'heures", X, 414);
+    // phrase, sur deux lignes au plus
+    g.font = font(500, 38); g.fillStyle = FG;
+    const words = w.line.split(" "), lines = [""];
+    words.forEach(x => { const t = lines[lines.length - 1] ? lines[lines.length - 1] + " " + x : x; if (g.measureText(t).width > R - X && lines[lines.length - 1]) lines.push(x); else lines[lines.length - 1] = t; });
+    lines.slice(0, 2).forEach((l, i) => g.fillText(l, X, 498 + i * 52));
+    // barres
+    const top = 620, base = 920, n = w.days.length, gap = 26, bw = (R - X - gap * (n - 1)) / n;
+    const tgts = w.days.map(x => x.tgt).filter(Boolean), scale = Math.max(60, ...w.days.map(x => x.net), ...tgts) * 1.1;
+    const grad = g.createLinearGradient(0, base, 0, top); grad.addColorStop(0, A); grad.addColorStop(1, "#E07AD8");
+    w.days.forEach((x, i) => {
+      const bx = X + i * (bw + gap), h = x.net ? Math.max(14, x.net / scale * (base - top)) : 14;
+      g.fillStyle = x.net ? grad : "#E8E8ED"; g.beginPath(); g.roundRect(bx, base - h, bw, h, 18); g.fill();
+      g.font = font(600, 34); g.fillStyle = MUTED; g.textAlign = "center"; g.fillText("DLMMJVS"[x.d.getDay()], bx + bw / 2, base + 56);
+    });
+    if (tgts.length && !w.F) {
+      const ty = base - Math.max(...tgts) / scale * (base - top);
+      g.save(); g.setLineDash([10, 10]); g.strokeStyle = "rgba(29,29,31,.35)"; g.lineWidth = 3; g.beginPath(); g.moveTo(X, ty); g.lineTo(R, ty); g.stroke(); g.restore();
+    }
+    // moyennes
+    g.fillStyle = "#F0F0F2"; g.fillRect(X, 1000, R - X, 2);
+    const stats = [[hm(w.net), w.F ? "de présence" : "comptées"], [w.inAvg != null ? clock(w.inAvg) : "—", "arrivée moy."], [w.outAvg != null ? clock(w.outAvg) : "—", "sortie moy."]];
+    stats.forEach(([v, l], i) => { const cx = X + (R - X) * (i + .5) / 3; g.textAlign = "center"; g.font = font(700, 56); g.fillStyle = FG; g.fillText(v, cx, 1084); g.font = font(500, 32); g.fillStyle = MUTED; g.fillText(l, cx, 1128); });
+    // logo : le B et ses trois points, puis « Balancier. »
+    const ls = .62, lx = X - 10, ly = 1190;
+    g.save(); g.translate(lx, ly); g.scale(ls, ls); g.translate(14.5, 28); g.fillStyle = FG;
+    g.fill(new Path2D("M0 0H21C31 0 36.5 5 36.5 12C36.5 17 33.5 20.5 29 21.6C35 22.6 39 27 39 33.5C39 40.5 33 44 23 44H0Z M10.5 8H19.5C24 8 26 9.8 26 12.6C26 15.4 24 17.6 19.5 17.6H10.5Z M10.5 25.2H21C26 25.2 28.3 27.4 28.3 30.8C28.3 34.3 26 36.2 21 36.2H10.5Z"), "evenodd"); g.restore();
+    [[60, 3, .28], [68.5, 4.3, .55], [79.5, 6.4, 1]].forEach(([cx, r, a]) => { g.globalAlpha = a; g.fillStyle = A; g.beginPath(); g.arc(lx + cx * ls, ly + 65.6 * ls, r * ls, 0, 7); g.fill(); });
+    g.globalAlpha = 1; g.textAlign = "left"; g.font = font(700, 40); g.fillStyle = FG; g.fillText("Balancier", lx + 64, 1246);
+    g.fillStyle = A; g.fillText(".", lx + 64 + g.measureText("Balancier").width, 1246);
+    return new Promise(res => cv.toBlob(res, "image/png"));
+  }
+  function openWeek(mon) {
+    const w = weekStats(mon), F = w.F;
+    openSheet(`<h3>Semaine ${w.num}</h3>
+      <p class="note" style="margin-top:-8px">${w.dates}</p>
+      <div class="big-sum"><b class="num ${F ? "" : w.bal >= 0 ? "pos" : "neg"}">${w.head}</b><small class="num">${F ? `${hm(w.net)} de présence` : `${hm(w.net)} comptées · ${hm(w.plan)} prévues`}</small></div>
+      <div class="tiles"><div class="tile"><span>Arrivée moy.</span><b class="num">${w.inAvg != null ? clock(w.inAvg) : "—"}</b></div><div class="tile"><span>Sortie moy.</span><b class="num">${w.outAvg != null ? clock(w.outAvg) : "—"}</b></div><div class="tile"><span>Pauses</span><b class="num">${mins(w.pauseAvg)}</b><small>par jour</small></div></div>
+      <p class="note">${esc(w.line)}</p>
+      <div class="sect">L'image à partager</div>
+      <img id="wk-img" alt="Résumé de la semaine ${w.num}" style="width:100%;border-radius:18px;display:block;background:var(--grey-soft);aspect-ratio:4/5">
+      <div class="row"><button class="ghost" id="wk-close">Fermer</button><button class="cta" id="wk-share" disabled>Partager</button></div>`);
+    $("wk-close").onclick = closeSheet;
+    // l'image est prête avant le toucher sur Partager : iOS n'ouvre le partage que juste après un geste
+    weekImage(w).then(blob => {
+      const img = $("wk-img"), btn = $("wk-share"); if (!img || !blob) return;
+      img.src = URL.createObjectURL(blob); btn.disabled = false;
+      btn.onclick = () => shareFile(`balancier-semaine-${w.num}.png`, blob, "image/png");
+    });
   }
 
   // ---------- trajets domicile <-> travail (transport.opendata.ch) ----------
@@ -1563,6 +1664,7 @@ button.item:active{opacity:.5}
     v.innerHTML = `${segHTML("mode", [["week", "Semaine"], ["month", "Mois"]], mode, "data-mode")}
       <div class="nav"><button id="tr-prev" aria-label="Précédent">‹</button><span>${navTxt}</span><button id="tr-next" aria-label="Suivant" ${isCurrent ? "disabled" : ""}>›</button></div>
       <div id="tr-body" style="display:flex;flex-direction:column;gap:12px">${html}
+      ${mode === "week" && weekStats(mondayOf(anchor)).worked ? `<button class="ghost" id="h-sum">Résumé de la semaine</button>` : ""}
       <button class="ghost" id="h-add">Ajouter une journée</button></div>`;
     after();
     slideSegs(v);
@@ -1572,6 +1674,7 @@ button.item:active{opacity:.5}
     const step = dir => { const a = new Date(track.anchor); if (track.mode === "week") a.setDate(a.getDate() + 7 * dir); else { a.setDate(1); a.setMonth(a.getMonth() + dir); } track.anchor = a; renderTrack(); animIn($("tr-body"), dir > 0 ? "anim-r" : "anim-l"); };
     $("tr-prev").onclick = () => step(-1);
     $("tr-next").onclick = () => step(1);
+    if ($("h-sum")) $("h-sum").onclick = () => openWeek(mondayOf(track.anchor));
     $("h-add").onclick = () => { const y = new Date(); y.setDate(y.getDate() - 1); openDay(dateKey(y), true); };
   }
 
@@ -1602,7 +1705,7 @@ button.item:active{opacity:.5}
     saveSettings(); if (tab === "set") keepForm(renderSettings);
   }
   async function shareFile(name, text, type) {
-    const blob = new Blob([text], { type });
+    const blob = text instanceof Blob ? text : new Blob([text], { type });
     try {
       const file = new File([blob], name, { type });
       if (navigator.canShare && navigator.canShare({ files: [file] })) { await navigator.share({ files: [file], title: name }); return true; }
