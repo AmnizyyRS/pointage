@@ -238,6 +238,45 @@ svg.i{width:20px;height:20px;fill:none;stroke:currentColor;stroke-width:1.9;stro
 .toast{position:fixed;left:50%;top:calc(12px + env(safe-area-inset-top,0px));transform:translateX(-50%);background:var(--fg);color:var(--bg);font-size:14px;font-weight:500;padding:6px 6px 6px 16px;min-height:40px;border-radius:20px;z-index:30;white-space:nowrap;display:flex;align-items:center;gap:12px;box-shadow:0 8px 28px rgba(0,0,0,.18)}
 .toast button{border:0;background:rgba(128,128,128,.28);color:var(--bg);font-weight:600;font-size:14px;border-radius:14px;padding:6px 12px}
 .toast:not(.undo){padding-right:16px}
+/* profil & accueil */
+.onb{position:fixed;inset:0;z-index:40;background:var(--bg);overflow:auto;-webkit-overflow-scrolling:touch;
+  padding:calc(env(safe-area-inset-top,0px) + 14px) max(16px,env(safe-area-inset-right,0px)) 0 max(16px,env(safe-area-inset-left,0px))}
+.onb-in{max-width:440px;min-height:100%;margin:0 auto;display:flex;flex-direction:column;gap:14px}
+.steps{display:flex;gap:6px;justify-content:center;padding:4px 0}
+.steps i{width:6px;height:6px;border-radius:3px;background:var(--hair);transition:width .25s}
+.steps i.on{width:20px;background:var(--accent)}
+.onb h2{margin:6px 4px 0;font-size:30px;font-weight:700;letter-spacing:-.025em;line-height:1.12}
+.lead{margin:-4px 4px 0;color:var(--muted);font-size:15px;line-height:1.4}
+.onb-nav{position:sticky;bottom:0;margin-top:auto;display:flex;gap:10px;padding:14px 0 calc(env(safe-area-inset-bottom,0px) + 14px);background:linear-gradient(to bottom,transparent,var(--bg) 26%)}
+.onb-nav .ghost{flex:0 0 110px}
+.hero-mark{width:96px;height:96px;border-radius:22px;background:#FFFFFF;box-shadow:0 10px 30px rgba(0,0,0,.12);align-self:center;margin:12vh 0 8px;overflow:hidden}
+.hero-mark svg{width:96px;height:96px;display:block}
+.choices{display:flex;flex-direction:column;gap:10px}
+.choice{display:flex;align-items:center;gap:12px;background:var(--card);border:2px solid transparent;border-radius:18px;padding:12px 14px;text-align:left;width:100%;color:inherit}
+.choice.on{border-color:var(--accent)}
+.choice .it-m small{line-height:1.3}
+.radio{width:22px;height:22px;border-radius:11px;border:2px solid var(--hair);flex:none}
+.choice.on .radio{border:7px solid var(--accent)}
+.days{display:grid;grid-template-columns:repeat(7,1fr);gap:6px;padding:12px 0}
+.days button{border:0;height:38px;border-radius:19px;background:var(--grey-soft);font-weight:600;font-size:14px;color:var(--muted);padding:0}
+.days button.on{background:var(--accent);color:var(--on-accent)}
+details.more{padding:0}
+details.more summary{list-style:none;cursor:pointer;color:var(--accent-ink);font-weight:600;font-size:15px;padding:12px 0}
+details.more summary::-webkit-details-marker{display:none}
+details.more[open] summary{border-bottom:1px solid var(--sep)}
+.item .tname{flex:1;text-align:left;color:var(--fg);max-width:none}
+.item .tshort{max-width:86px}
+.item.shrow{flex-wrap:wrap;row-gap:2px}
+.item.shrow .tname{flex:1 1 0;font-weight:600;font-size:16px}
+.shtimes{flex:1 1 100%;display:flex;align-items:center;gap:8px;color:var(--muted)}
+.item .shtimes input{text-align:left;max-width:110px;color:var(--fg)}
+.sum-line{display:flex;justify-content:space-between;gap:10px;font-size:15px;padding:11px 0}
+.sum-line + .sum-line{border-top:1px solid var(--sep)}
+.sum-line span{color:var(--muted)}
+.sum-line b{font-weight:600;text-align:right}
+.avatar{width:48px;height:48px;border-radius:24px;background:var(--accent-soft);color:var(--accent-ink);display:flex;align-items:center;justify-content:center;font-weight:700;font-size:17px;flex:none}
+.link{border:0;background:none;color:var(--accent-ink);font-weight:600;font-size:15px;padding:8px;align-self:center}
+.unit{font-size:.5em;color:var(--muted);letter-spacing:-.01em;font-weight:600}
 @media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
 </style>
 </head>
@@ -262,7 +301,7 @@ svg.i{width:20px;height:20px;fill:none;stroke:currentColor;stroke-width:1.9;stro
   <!-- Aujourd'hui -->
   <main class="view" id="v-today">
     <section class="hero">
-      <div class="hero-k">Ton compteur d'heures</div>
+      <div class="hero-k" id="hero-k">Ton compteur d'heures</div>
       <div class="hero-v num" id="tot">+0 h 00</div>
       <div class="pills"><span class="pill" id="wk-pill"></span><button class="pill" id="spark-pill">30 jours ›</button></div>
       <svg class="spark" id="spark" viewBox="0 0 300 34" preserveAspectRatio="none" role="img" aria-label="Évolution du compteur sur 30 jours"></svg>
@@ -308,6 +347,8 @@ svg.i{width:20px;height:20px;fill:none;stroke:currentColor;stroke-width:1.9;stro
   </div>
 </nav>
 
+<div class="onb" id="onb" hidden></div>
+<input type="file" id="imp-any" accept="application/json,.json" hidden>
 <div class="scrim" id="scrim" hidden></div>
 <div class="toast" id="toast" hidden><span id="toast-msg"></span><button id="toast-undo" hidden>Annuler</button></div>
 
@@ -315,10 +356,19 @@ svg.i{width:20px;height:20px;fill:none;stroke:currentColor;stroke-width:1.9;stro
 (() => {
   const LS_KEY = "pointage.v1";
   const clone = o => JSON.parse(JSON.stringify(o));
+  const FULL = { GE: 2520, FR: 2100, none: 2400 };   // temps plein par semaine (min) selon la région
   const DEFAULT_SETTINGS = {
-    sched: [0, 504, 504, 504, 504, 504, 0],   // index = getDay() (0 = dimanche)
-    pauseMin: 30, offered: 20, winStart: 390, clampStart: false, minOut: 945,
-    accent: "bleu", theme: "auto", holidays: "GE", name: "",
+    onboarded: false, name: "", lastName: "", company: "",
+    type: "variable",                                   // variable | partiel | fixe | equipes | forfait
+    sched: [0, 504, 504, 504, 504, 504, 0],             // variable/partiel : durée nette par jour (index = getDay(), 0 = dimanche)
+    rate: 100,                                          // partiel : taux d'activité
+    fixed: [null, { s: 480, e: 1020 }, { s: 480, e: 1020 }, { s: 480, e: 1020 }, { s: 480, e: 1020 }, { s: 480, e: 1020 }, null],
+    shifts: [{ id: "m", name: "Matin", s: 360, e: 840 }, { id: "a", name: "Après-midi", s: 840, e: 1320 }, { id: "n", name: "Nuit", s: 1320, e: 360 }],
+    rotation: ["m", "a", "n"], rotAnchor: null,
+    days: [false, true, true, true, true, true, false], // équipes / forfait : jours travaillés
+    forfaitDays: 218,
+    pauseMin: 30, offered: 0, winStart: 390, clampStart: false, minOut: null,
+    accent: "bleu", theme: "auto", holidays: "GE",
     vacDays: 25, maxWeek: 2700, remoteCap: 0,
     transit: { home: "", work: "", margin: 5 }
   };
@@ -329,17 +379,21 @@ svg.i{width:20px;height:20px;fill:none;stroke:currentColor;stroke-width:1.9;stro
   const pad = n => String(n).padStart(2, "0");
   const toMin = s => { if (!s) return null; const [h, m] = s.split(":").map(Number); return h * 60 + m; };
   const clock = m => { m = ((Math.round(m) % 1440) + 1440) % 1440; return pad(Math.floor(m / 60)) + ":" + pad(m % 60); };
+  const hhmm = m => pad(Math.floor(m / 60)) + ":" + pad(m % 60);          // sans modulo (nuit : 29:05 = 05:05 le lendemain)
   const hm = m => { m = Math.max(0, Math.round(m)); return Math.floor(m / 60) + NB + "h" + NB + pad(m % 60); };
+  const hmShort = m => Math.floor(m / 60) + "h" + pad(m % 60);
   const signed = m => { m = Math.round(m); return (m < 0 ? "−" : "+") + hm(Math.abs(m)); };
   const dateKey = d => d.getFullYear() + "-" + pad(d.getMonth() + 1) + "-" + pad(d.getDate());
   const nowMin = () => { const d = new Date(); return d.getHours() * 60 + d.getMinutes(); };
   const parseKey = k => { const [y, mo, d] = k.split("-").map(Number); return new Date(y, mo - 1, d); };
+  const nowRel = k => Math.floor((Date.now() - parseKey(k).getTime()) / 60000); // minutes écoulées depuis minuit du jour k
   const addDays = (d, n) => { const x = new Date(d); x.setDate(x.getDate() + n); return x; };
   const J = ["dim.", "lun.", "mar.", "mer.", "jeu.", "ven.", "sam."];
   const JC = ["Dim", "Lun", "Mar", "Mer", "Jeu", "Ven", "Sam"];
   const JL = ["dimanche", "lundi", "mardi", "mercredi", "jeudi", "vendredi", "samedi"];
   const M = ["janv.", "févr.", "mars", "avr.", "mai", "juin", "juil.", "août", "sept.", "oct.", "nov.", "déc."];
   const MOIS = ["janvier", "février", "mars", "avril", "mai", "juin", "juillet", "août", "septembre", "octobre", "novembre", "décembre"];
+  const WEEK = [1, 2, 3, 4, 5, 6, 0];                   // ordre d'affichage lun → dim
   const cap = s => s.charAt(0).toUpperCase() + s.slice(1);
   const longDate = d => J[d.getDay()] + " " + d.getDate() + " " + M[d.getMonth()];
   const short = d => d.getDate() + " " + M[d.getMonth()];
@@ -350,6 +404,12 @@ svg.i{width:20px;height:20px;fill:none;stroke:currentColor;stroke-width:1.9;stro
   const fmtDays = n => String(Math.round(n * 2) / 2).replace(".", ",");
   const plural = (n, w) => n + " " + w + (Math.abs(n) > 1 ? "s" : "");
   const mins = m => m >= 60 ? hm(m) : Math.max(0, Math.round(m)) + NB + "min";
+  const daysTxt = arr => {   // arr[getDay()] → « lun–ven », « lun, mer, ven »
+    const on = WEEK.filter(d => arr[d]); if (!on.length) return "aucun jour";
+    const idx = on.map(d => WEEK.indexOf(d)), cont = idx.every((v, i) => !i || v === idx[i - 1] + 1);
+    const nm = d => J[d].replace(".", "");
+    return cont && on.length > 2 ? nm(on[0]) + "–" + nm(on[on.length - 1]) : on.map(nm).join(", ");
+  };
 
   // icônes (traits)
   const IC = {
@@ -361,36 +421,40 @@ svg.i{width:20px;height:20px;fill:none;stroke:currentColor;stroke-width:1.9;stro
     pen: '<path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4z"/>',
     tram: '<rect x="5" y="3" width="14" height="14" rx="3"/><path d="M5 11h14M8.5 20l-1.5 2M15.5 20l1.5 2"/>',
     sun: '<circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/>',
+    moon: '<path d="M20 14.5A8 8 0 0 1 9.5 4a8 8 0 1 0 10.5 10.5z"/>',
     plus: '<path d="M12 5v14M5 12h14"/>',
     loop: '<path d="M4 12a8 8 0 0 1 13.7-5.6L20 9M20 4v5h-5"/><path d="M20 12a8 8 0 0 1-13.7 5.6L4 15M4 20v-5h5"/>',
     flag: '<path d="M5 21V4M5 4h12l-2 4 2 4H5"/>',
     clock: '<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/>',
     stop: '<rect x="6" y="6" width="12" height="12" rx="2.5"/>',
     share: '<path d="M12 15V3M7 8l5-5 5 5"/><path d="M5 13v6a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-6"/>',
-    home: '<path d="M4 11l8-7 8 7"/><path d="M6 9.5V20h12V9.5"/>'
+    home: '<path d="M4 11l8-7 8 7"/><path d="M6 9.5V20h12V9.5"/>',
+    pie: '<circle cx="12" cy="12" r="9"/><path d="M12 3v9h9"/>',
+    grid: '<rect x="4" y="4" width="16" height="16" rx="3"/><path d="M4 10h16M10 10v10"/>',
+    brief: '<rect x="3" y="7" width="18" height="13" rx="2.5"/><path d="M9 7V5a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2v2M3 13h18"/>'
   };
   const ic = k => `<svg class="i" viewBox="0 0 24 24" aria-hidden="true">${IC[k]}</svg>`;
+  const MARK = `<svg viewBox="0 0 100 100" aria-hidden="true"><rect width="100" height="100" fill="#FFFFFF"/><path fill="#1D1D1F" fill-rule="evenodd" transform="translate(14.5 28)" d="M0 0H21C31 0 36.5 5 36.5 12C36.5 17 33.5 20.5 29 21.6C35 22.6 39 27 39 33.5C39 40.5 33 44 23 44H0Z M10.5 8H19.5C24 8 26 9.8 26 12.6C26 15.4 24 17.6 19.5 17.6H10.5Z M10.5 25.2H21C26 25.2 28.3 27.4 28.3 30.8C28.3 34.3 26 36.2 21 36.2H10.5Z"/><circle cx="60" cy="65.6" r="3" fill="#0071E3" fill-opacity=".28"/><circle cx="68.5" cy="65.6" r="4.3" fill="#0071E3" fill-opacity=".55"/><circle cx="79.5" cy="65.6" r="6.4" fill="#0071E3"/></svg>`;
 
-  const TYPES = { work: "Travail", conge: "Congé", maladie: "Maladie", recup: "Récupération", ferie: "Férié" };
-  const TYPE_ICO = { conge: ["sun", "blue"], maladie: ["plus", "red"], recup: ["loop", "green"], ferie: ["flag", ""], work: ["clock", ""] };
+  const TYPES = { work: "Travail", conge: "Congé", rtt: "RTT", maladie: "Maladie", recup: "Récupération", ferie: "Férié" };
+  const TYPE_ICO = { conge: ["sun", "blue"], rtt: ["sun", "violet"], maladie: ["plus", "red"], recup: ["loop", "green"], ferie: ["flag", ""], work: ["clock", ""] };
+  const WORK = {
+    variable: { name: "Horaire variable", ico: "clock", desc: "Arrivée libre, un nombre d'heures à faire, un compteur d'heures sup." },
+    fixe: { name: "Horaire fixe", ico: "grid", desc: "Les mêmes heures chaque jour, par exemple 8 h – 17 h." },
+    partiel: { name: "Temps partiel", ico: "pie", desc: "Un pourcentage d'un temps plein, sur les jours de ton choix." },
+    equipes: { name: "Équipes / postes", ico: "loop", desc: "Matin, après-midi, nuit, avec une rotation sur plusieurs semaines." },
+    forfait: { name: "Forfait jours", ico: "brief", desc: "Cadre au forfait (France) : on compte tes jours, pas tes heures." }
+  };
+  const REGIONS = { GE: { name: "Suisse · Genève", desc: "Fériés genevois, 42 h par semaine en général" }, FR: { name: "France", desc: "Fériés français, 35 h par semaine" }, none: { name: "Ailleurs", desc: "Pas de jours fériés automatiques" } };
+  const typesFor = () => Object.keys(TYPES).filter(t => t !== "rtt" || state.settings.holidays === "FR" || state.settings.type === "forfait");
+
   const norm = v => ({
     punches: sortTimes(Array.isArray(v && v.punches) ? v.punches : [v && v.in, v && v.bs, v && v.be, v && v.out]),
     type: (v && TYPES[v.type]) ? v.type : "work",
-    half: !!(v && v.half), remote: !!(v && v.remote), pause: !!(v && v.pause)
+    half: !!(v && v.half), remote: !!(v && v.remote), pause: !!(v && v.pause), shift: (v && v.shift) || null
   });
-  const meaningful = r => r.punches.length || r.type !== "work" || r.remote;
+  const meaningful = r => r.punches.length || r.type !== "work" || r.remote || r.shift;
 
-  function migrateSettings(s) {
-    const out = { ...clone(DEFAULT_SETTINGS), ...(s || {}) };
-    if (!Array.isArray(out.sched) || out.sched.length !== 7) { const d = (s && s.daily) || 504; out.sched = [0, d, d, d, d, d, 0]; }
-    const ot = (s && s.transit) || {};
-    out.transit = { home: ot.home || ot.to || "", work: ot.work || ot.from || "", margin: ot.margin ?? ot.walk ?? 5 };
-    if (!ACCENTS[out.accent]) out.accent = "bleu";
-    delete out.daily; delete out.winEnd; delete out.tone;
-    return out;
-  }
-
-  // ---------- thème & couleur d'accent ----------
   const ACCENTS = {
     bleu:   { name: "Bleu",   light: ["#0071E3", "#E8F1FC", "#0058B0", "#FFFFFF"], dark: ["#0A84FF", "rgba(10,132,255,.18)", "#64B0FF", "#FFFFFF"] },
     noir:   { name: "Noir",   light: ["#1D1D1F", "#ECECEE", "#1D1D1F", "#FFFFFF"], dark: ["#F5F5F7", "rgba(255,255,255,.12)", "#F5F5F7", "#000000"] },
@@ -398,16 +462,32 @@ svg.i{width:20px;height:20px;fill:none;stroke:currentColor;stroke-width:1.9;stro
     vert:   { name: "Vert",   light: ["#1A7F37", "#E3F3E7", "#1A7F37", "#FFFFFF"], dark: ["#30D158", "rgba(48,209,88,.16)", "#30D158", "#000000"] }
   };
 
+  function migrateSettings(s, existingUser) {
+    const out = { ...clone(DEFAULT_SETTINGS), ...(s || {}) };
+    if (!Array.isArray(out.sched) || out.sched.length !== 7) { const d = (s && s.daily) || 504; out.sched = [0, d, d, d, d, d, 0]; }
+    const ot = (s && s.transit) || {};
+    out.transit = { home: ot.home || ot.to || "", work: ot.work || ot.from || "", margin: ot.margin ?? ot.walk ?? 5 };
+    if (!ACCENTS[out.accent]) out.accent = "bleu";
+    if (!WORK[out.type]) out.type = "variable";
+    if (s && s.onboarded === undefined && existingUser) out.onboarded = true;   // utilisateurs d'avant les profils
+    if (!Array.isArray(out.days) || out.days.length !== 7) out.days = clone(DEFAULT_SETTINGS.days);
+    if (!Array.isArray(out.fixed) || out.fixed.length !== 7) out.fixed = clone(DEFAULT_SETTINGS.fixed);
+    if (!Array.isArray(out.shifts) || !out.shifts.length) out.shifts = clone(DEFAULT_SETTINGS.shifts);
+    if (!Array.isArray(out.rotation) || !out.rotation.length) out.rotation = clone(DEFAULT_SETTINGS.rotation);
+    delete out.daily; delete out.winEnd; delete out.tone;
+    return out;
+  }
   try {
     const c = JSON.parse(localStorage.getItem(LS_KEY) || "null");
     if (c && c.days) {
       const days = {};
       Object.keys(c.days).forEach(k => { const r = norm(c.days[k]); if (meaningful(r)) days[k] = r; });
-      state = { settings: migrateSettings(c.settings), days };
+      state = { settings: migrateSettings(c.settings, true), days };
     }
   } catch (e) {}
   const lsWrite = () => { try { localStorage.setItem(LS_KEY, JSON.stringify(state)); } catch (e) {} };
 
+  // ---------- thème ----------
   const mq = window.matchMedia ? matchMedia("(prefers-color-scheme: dark)") : null;
   const themeMode = () => { const s = state.settings; return s.theme === "auto" ? (mq && mq.matches ? "dark" : "light") : s.theme; };
   function applyTheme() {
@@ -419,7 +499,7 @@ svg.i{width:20px;height:20px;fill:none;stroke:currentColor;stroke-width:1.9;stro
   }
   if (mq && mq.addEventListener) mq.addEventListener("change", () => { render(); if (tab === "set") renderSettings(); });
 
-  // ---------- jours fériés (Genève) ----------
+  // ---------- jours fériés ----------
   const holCache = {};
   function easter(y) {
     const a = y % 19, b = Math.floor(y / 100), c = y % 100, d = Math.floor(b / 4), e = b % 4, f = Math.floor((b + 8) / 25),
@@ -428,35 +508,68 @@ svg.i{width:20px;height:20px;fill:none;stroke:currentColor;stroke-width:1.9;stro
       month = Math.floor((h + l - 7 * m + 114) / 31), day = ((h + l - 7 * m + 114) % 31) + 1;
     return new Date(y, month - 1, day);
   }
-  function holidaysGE(y) {
-    if (holCache[y]) return holCache[y];
+  function holidaysOf(region, y) {
+    const key = region + y; if (holCache[key]) return holCache[key];
     const E = easter(y), H = {};
     const add = (d, n) => { H[dateKey(d)] = n; };
-    add(new Date(y, 0, 1), "Nouvel An");
-    add(addDays(E, -2), "Vendredi saint");
-    add(addDays(E, 1), "Lundi de Pâques");
-    add(addDays(E, 39), "Ascension");
-    add(addDays(E, 50), "Lundi de Pentecôte");
-    add(new Date(y, 7, 1), "Fête nationale");
-    const s1 = new Date(y, 8, 1); while (s1.getDay() !== 0) s1.setDate(s1.getDate() + 1);
-    add(addDays(s1, 4), "Jeûne genevois");
-    add(new Date(y, 11, 25), "Noël");
-    add(new Date(y, 11, 31), "Restauration de la République");
-    return (holCache[y] = H);
+    if (region === "GE") {
+      add(new Date(y, 0, 1), "Nouvel An"); add(addDays(E, -2), "Vendredi saint"); add(addDays(E, 1), "Lundi de Pâques");
+      add(addDays(E, 39), "Ascension"); add(addDays(E, 50), "Lundi de Pentecôte"); add(new Date(y, 7, 1), "Fête nationale");
+      const s1 = new Date(y, 8, 1); while (s1.getDay() !== 0) s1.setDate(s1.getDate() + 1);
+      add(addDays(s1, 4), "Jeûne genevois"); add(new Date(y, 11, 25), "Noël"); add(new Date(y, 11, 31), "Restauration de la République");
+    } else if (region === "FR") {
+      add(new Date(y, 0, 1), "Jour de l'an"); add(addDays(E, 1), "Lundi de Pâques"); add(new Date(y, 4, 1), "Fête du Travail");
+      add(new Date(y, 4, 8), "Victoire 1945"); add(addDays(E, 39), "Ascension"); add(addDays(E, 50), "Lundi de Pentecôte");
+      add(new Date(y, 6, 14), "Fête nationale"); add(new Date(y, 7, 15), "Assomption"); add(new Date(y, 10, 1), "Toussaint");
+      add(new Date(y, 10, 11), "Armistice"); add(new Date(y, 11, 25), "Noël");
+    }
+    return (holCache[key] = H);
   }
-  const holidayName = k => state.settings.holidays === "GE" ? holidaysGE(+k.slice(0, 4))[k] || null : null;
+  const holidaysFor = y => holidaysOf(state.settings.holidays, y);
+  const holidayName = k => holidaysFor(+k.slice(0, 4))[k] || null;
 
-  // ---------- core calc ----------
-  function baseFor(k) { return state.settings.sched[parseKey(k).getDay()] || 0; }
+  // ---------- planning selon le profil ----------
+  const isFlex = () => ["variable", "partiel"].includes(state.settings.type);
+  const isForfait = () => state.settings.type === "forfait";
+  const netOf = amp => Math.max(0, amp - (amp > 330 + state.settings.pauseMin ? state.settings.pauseMin : 0));
+  function shiftFor(k, rec) {
+    const s = state.settings, dow = parseKey(k).getDay();
+    if (rec && rec.shift) return rec.shift === "off" ? null : s.shifts.find(x => x.id === rec.shift) || null;
+    if (!s.days[dow] || !s.rotation.length) return null;
+    const anchor = s.rotAnchor ? parseKey(s.rotAnchor) : mondayOf(new Date());
+    const w = Math.round((mondayOf(parseKey(k)) - anchor) / (7 * 864e5)), L = s.rotation.length;
+    const id = s.rotation[((w % L) + L) % L];
+    return s.shifts.find(x => x.id === id) || null;
+  }
+  // plan du jour : durée nette à faire (net), et pour fixe/équipes l'horaire prévu (start/end en minutes, end > 1440 si la nuit passe minuit)
+  function planFor(k, rec) {
+    const s = state.settings, dow = parseKey(k).getDay();
+    if (rec === undefined) rec = state.days[k];
+    if (s.type === "fixe") { const f = s.fixed[dow]; if (!f) return { net: 0 }; const e = f.e > f.s ? f.e : f.e + 1440; return { start: f.s, end: e, net: netOf(e - f.s) }; }
+    if (s.type === "equipes") { const sh = shiftFor(k, rec); if (!sh) return { net: 0, shift: null }; const e = sh.e > sh.s ? sh.e : sh.e + 1440; return { start: sh.s, end: e, net: netOf(e - sh.s), shift: sh }; }
+    if (s.type === "forfait") return { net: s.days[dow] ? 1 : 0 };
+    return { net: s.sched[dow] || 0 };
+  }
+  const baseFor = k => planFor(k).net;
   function targetFor(k, rec) {
-    const base = baseFor(k);
+    if (isForfait()) return 0;
+    const base = planFor(k, rec || null).net;
     const type = rec ? rec.type : "work";
     if (type === "ferie" || (holidayName(k) && type === "work")) return 0;
-    if (type === "conge" || type === "maladie") return rec.half ? Math.round(base / 2) : 0;
+    if (type === "conge" || type === "maladie" || type === "rtt") return rec.half ? Math.round(base / 2) : 0;
     return base;
   }
-  function calc(rec, isToday, k) {
-    const s = state.settings, n = nowMin();
+  // jour « actif » : hier si un poste de nuit est encore ouvert, sinon aujourd'hui
+  function activeKey() {
+    const now = new Date(), tk = dateKey(now), yk = dateKey(addDays(now, -1)), r = state.days[yk];
+    if (state.days[tk] && state.days[tk].punches.length) return tk;
+    if (r && (r.punches.length % 2 === 1 || r.pause)) { const p = planFor(yk); if (p.end > 1440 && nowRel(yk) < p.end + 360) return yk; }
+    return tk;
+  }
+
+  // ---------- calcul ----------
+  function calc(rec, live, k) {
+    const s = state.settings, n = nowRel(k);
     if (!rec) return null;
     const t = targetFor(k, rec);
     const p = (rec.punches || []).map(toMin);
@@ -464,17 +577,17 @@ svg.i{width:20px;height:20px;fill:none;stroke:currentColor;stroke-width:1.9;stro
       if (rec.type === "work") return null;
       return { inside: false, raw: 0, gaps: 0, lunch: 0, offered: 0, pauseDue: 0, net: 0, remaining: t, daily: t, first: null, last: null, target: null, complete: true, balance: -t, absence: true };
     }
-    if (s.clampStart) p[0] = Math.max(p[0], s.winStart);
+    if (s.clampStart && isFlex()) p[0] = Math.max(p[0], s.winStart);
     let raw = 0, gaps = 0; const gapList = [];
     for (let i = 0; i < p.length; i += 2) {
-      const a = p[i], b = i + 1 < p.length ? p[i + 1] : (isToday ? n : null);
+      const a = p[i], b = i + 1 < p.length ? p[i + 1] : (live ? n : null);
       if (b != null) raw += Math.max(0, b - a);
       if (i > 0) { const g = Math.max(0, p[i] - p[i - 1]); gaps += g; gapList.push(g); }
     }
     const inside = p.length % 2 === 1;
-    const paused = !inside && isToday && !!rec.pause;   // en pause : la journée n'est pas terminée
+    const paused = !inside && live && !!rec.pause;
     const needsPause = t > 330 || raw > 330;
-    // la plus longue pause = pause de midi (non payée, minimum pauseMin) ; les autres pauses sont offertes jusqu'à s.offered min
+    // la plus longue pause = pause de midi (non payée, minimum pauseMin) ; les autres sont offertes jusqu'à s.offered min
     const lunch = needsPause && gapList.length ? Math.max(...gapList) : 0;
     const others = gaps - lunch;
     const offered = Math.min(s.offered || 0, others);
@@ -485,26 +598,26 @@ svg.i{width:20px;height:20px;fill:none;stroke:currentColor;stroke-width:1.9;stro
     return {
       inside, paused, raw, gaps, lunch, offered, pauseDue, net, remaining, daily: t,
       first: p[0], last: p[p.length - 1],
-      target: inside && isToday ? n + remaining : null,
+      target: inside && live ? n + remaining : null,
       complete, balance: complete ? net - t : null
     };
   }
-  const calcK = (k, tk) => calc(state.days[k], k === tk, k);
-  function totalsOf(keys, tk) {
-    let worked = 0, bal = 0, n = 0, target = 0;
-    keys.forEach(k => { const r = calcK(k, tk); if (r && r.complete) { worked += r.net; bal += r.balance; target += r.daily; n++; } });
-    return { worked, bal, n, target };
+  const calcK = (k, ak) => calc(state.days[k], k === ak, k);
+  function totalsOf(keys, ak) {
+    let worked = 0, bal = 0, n = 0, target = 0, days = 0;
+    keys.forEach(k => { const r = calcK(k, ak); if (r && r.complete) { worked += r.net; bal += r.balance; target += r.daily; n++; if (!r.absence) days++; } });
+    return { worked, bal, n, target, days };
   }
   const weekKeys = mon => { const a = []; for (let i = 0; i < 7; i++) a.push(dateKey(addDays(mon, i))); return a; };
 
-  // ---------- persistence ----------
+  // ---------- persistance ----------
   function saveDay(k, rec) {
     if (rec && meaningful(rec)) state.days[k] = rec; else delete state.days[k];
     lsWrite(); render();
   }
   function saveSettings() { lsWrite(); render(); }
 
-  // ---------- tabs ----------
+  // ---------- onglets ----------
   const $ = id => document.getElementById(id);
   let tab = "today";
   const TITLES = { track: "Suivi", abs: "Absences", set: "Réglages" };
@@ -522,22 +635,21 @@ svg.i{width:20px;height:20px;fill:none;stroke:currentColor;stroke-width:1.9;stro
   }
   document.querySelectorAll(".tab").forEach(b => b.onclick = () => { if (b.dataset.tab === "track" && tab !== "track") track.anchor = new Date(); showTab(b.dataset.tab); });
 
-  // ---------- render ----------
+  // ---------- rendu ----------
   function render() {
     applyTheme();
-    const now = new Date();
-    const rec = state.days[dateKey(now)];
+    const ak = activeKey(), rec = state.days[ak];
     $("wheel").classList.toggle("on", !!(rec && rec.punches.length % 2 === 1));
     if (tab === "today") renderToday();
     else if (tab === "track") renderTrack();
     else if (tab === "abs") renderAbs();
   }
 
-  function sparkline(tk) {
+  function sparkline(tk, ak) {
     const start = addDays(parseKey(tk), -29), daily = new Array(30).fill(0);
     let base = 0, has = false;
     Object.keys(state.days).forEach(k => {
-      const r = calcK(k, tk); if (!r || !r.complete) return;
+      const r = calcK(k, ak); if (!r || !r.complete) return;
       has = true;
       const i = Math.round((parseKey(k) - start) / 864e5);
       if (i < 0) base += r.balance; else if (i < 30) daily[i] += r.balance;
@@ -551,20 +663,27 @@ svg.i{width:20px;height:20px;fill:none;stroke:currentColor;stroke-width:1.9;stro
 
   let projOut = null, projDay = null;
   function renderToday() {
-    const now = new Date(), tk = dateKey(now), n = nowMin(), s = state.settings;
-    const rec = state.days[tk] || null;
-    const c = calc(rec, true, tk);
-    const hol = holidayName(tk);
-    const t0 = targetFor(tk, rec || { type: "work" });
+    const now = new Date(), tk = dateKey(now), s = state.settings, F = isForfait();
+    const ak = activeKey(), n = nowRel(ak);
+    const rec = state.days[ak] || null;
+    const c = calc(rec, true, ak);
+    const hol = holidayName(ak);
+    const plan = planFor(ak, rec);
+    const t0 = targetFor(ak, rec || { type: "work" });
+    const planned = F ? plan.net > 0 && !hol : t0 > 0;
     const pun = rec ? rec.punches : [];
     const inside = pun.length % 2 === 1;
     const onPause = !!(c && c.paused);
+    const timed = plan.start != null;   // fixe / équipes : horaire prévu
 
-    const mon = mondayOf(now); let wk = 0, tot = 0, any = false, wkNet = 0;
+    const mon = mondayOf(now), y = now.getFullYear();
+    let wk = 0, tot = 0, any = false, wkNet = 0, wkDays = 0, yDays = 0;
     Object.keys(state.days).forEach(k => {
-      const r = calcK(k, tk); if (!r || !r.complete) return;
-      any = true; tot += r.balance;
-      if (parseKey(k) >= mon && parseKey(k) < addDays(mon, 7)) { wk += r.balance; wkNet += r.net; }
+      const r = state.days[k], d = parseKey(k), inWeek = d >= mon && d < addDays(mon, 7);
+      if (F) { if (r.type === "work" && r.punches.length) { if (d.getFullYear() === y) yDays++; if (inWeek) wkDays++; } return; }
+      const x = calcK(k, ak); if (!x || !x.complete) return;
+      any = true; tot += x.balance;
+      if (inWeek) { wk += x.balance; wkNet += x.net; }
     });
 
     // en-tête
@@ -573,31 +692,39 @@ svg.i{width:20px;height:20px;fill:none;stroke:currentColor;stroke-width:1.9;stro
     $("greet").innerHTML = name ? (now.getHours() >= 18 ? "Bonsoir " : "Bonjour ") + esc(name) : 'Balancier<span style="color:var(--accent)">.</span>';
     let st;
     if (c && c.absence) st = `<span class="dot"></span>${TYPES[rec.type]}${rec.half ? " ½" : ""}`;
-    else if (inside) st = `<span class="dot on"></span>En poste · ${hm(c.raw)}`;
+    else if (inside) st = `<span class="dot on"></span>${plan.shift ? plan.shift.name : "En poste"} · ${hm(c.raw)}`;
     else if (onPause) st = `<span class="dot pause"></span>En pause · ${mins(n - c.last)}`;
     else if (c && c.complete) st = `<span class="dot"></span>Journée terminée`;
-    else if (t0 === 0) st = `<span class="dot"></span>${hol ? "Férié" : "Repos"}`;
-    else st = `<span class="dot"></span>Pas encore pointé`;
+    else if (!planned) st = `<span class="dot"></span>${hol ? "Férié" : "Repos"}`;
+    else st = `<span class="dot"></span>${plan.shift ? "Poste " + plan.shift.name.toLowerCase() : "Pas encore pointé"}`;
     $("top-r").innerHTML = `<span class="status num">${st}</span>`;
 
     // compteur
-    $("tot").textContent = signed(tot);
-    const wp = $("wk-pill");
-    if (any) { wp.textContent = signed(wk) + " cette semaine"; wp.className = "pill num " + (wk >= 0 ? "ok" : "neg"); }
-    else { wp.textContent = "Aucune journée terminée"; wp.className = "pill"; }
-    const sp = sparkline(tk), svgS = $("spark");
-    if (sp) { const col = sp.up ? "var(--ok)" : "var(--neg)"; svgS.innerHTML = `<path d="${sp.d}" style="stroke:${col}"/><circle cx="${sp.end[0].toFixed(1)}" cy="${sp.end[1].toFixed(1)}" r="3.5" style="fill:${col}"/>`; svgS.hidden = false; }
-    else svgS.hidden = true;
+    const wp = $("wk-pill"), svgS = $("spark");
+    if (F) {
+      $("hero-k").textContent = `Jours travaillés en ${y}`;
+      $("tot").innerHTML = `${yDays}<span class="unit"> / ${s.forfaitDays}</span>`;
+      wp.textContent = plural(wkDays, "jour") + " cette semaine"; wp.className = "pill";
+      $("spark-pill").textContent = `reste ${Math.max(0, s.forfaitDays - yDays)} j ›`;
+      svgS.hidden = true;
+    } else {
+      $("hero-k").textContent = "Ton compteur d'heures";
+      $("tot").textContent = signed(tot);
+      if (any) { wp.textContent = signed(wk) + " cette semaine"; wp.className = "pill num " + (wk >= 0 ? "ok" : "neg"); }
+      else { wp.textContent = "Aucune journée terminée"; wp.className = "pill"; }
+      $("spark-pill").textContent = "30 jours ›";
+      const sp = sparkline(tk, ak);
+      if (sp) { const col = sp.up ? "var(--ok)" : "var(--neg)"; svgS.innerHTML = `<path d="${sp.d}" style="stroke:${col}"/><circle cx="${sp.end[0].toFixed(1)}" cy="${sp.end[1].toFixed(1)}" r="3.5" style="fill:${col}"/>`; svgS.hidden = false; }
+      else svgS.hidden = true;
+    }
 
     // actions
-    const nextIsIn = !inside;
-    const mainL = inside ? "Sortie" : onPause ? "Reprise" : pun.length ? "Entrée" : "Entrée";
     $("act-main-i").innerHTML = ic(inside ? "out" : onPause ? "go" : "in");
-    $("act-main-l").textContent = mainL;
+    $("act-main-l").textContent = inside ? "Sortie" : onPause ? "Reprise" : "Entrée";
     $("act-pause-i").innerHTML = ic(onPause ? "stop" : "cup");
     $("act-pause-l").textContent = onPause ? "Terminer" : "Pause";
     $("act-pause").disabled = !(inside || onPause);
-    $("act-main").dataset.kind = nextIsIn ? "in" : "out";
+    $("act-main").dataset.kind = inside ? "out" : "in";
 
     // carte du jour
     const dk = $("dc-k"), dv = $("dc-v"), dr = $("dc-r"), fl = $("dc-fl"), fr = $("dc-fr");
@@ -606,16 +733,25 @@ svg.i{width:20px;height:20px;fill:none;stroke:currentColor;stroke-width:1.9;stro
     const nudge = $("nudge"); nudge.hidden = true; nudge.className = "nudge";
     const setNudge = (txt, warn) => { nudge.textContent = txt; nudge.hidden = false; if (warn) nudge.classList.add("warn"); };
     const pauseTxt = x => x.gaps ? `Pauses ${x.gaps} min${x.offered ? ` · ${x.offered} offertes` : ""}` : (x.daily > 330 ? `Pause de midi à prendre` : "");
-    const leaveOf = x => { const blocked = s.minOut != null && s.minOut > x.target && x.daily > 330; return { blocked, leave: blocked ? s.minOut : x.target }; };
+    const MO = isFlex() ? s.minOut : null;
+    const leaveOf = x => { const blocked = MO != null && MO > x.target && x.daily > 330; return { blocked, leave: blocked ? MO : x.target }; };
 
     if (!c) {
-      if (t0 === 0) {
+      if (!planned) {
         dk.textContent = "Aujourd'hui"; dv.textContent = hol || "Repos"; dv.classList.add("word"); showTrack = false;
-        fl.textContent = "Si tu pointes, tout compte en plus.";
+        fl.textContent = F ? "Jour non travaillé." : "Si tu pointes, tout compte en plus.";
+      } else if (F) {
+        dk.textContent = "Forfait jours"; dv.textContent = "Journée prévue"; dv.classList.add("word"); showTrack = false;
+        fl.textContent = "Pointe ton arrivée : Balancier surveille ton amplitude (13 h max) et ton repos de 11 h.";
+      } else if (timed) {
+        dk.textContent = plan.shift ? `Poste ${plan.shift.name.toLowerCase()}` : "Horaire prévu";
+        dv.textContent = `${clock(plan.start)} – ${clock(plan.end)}`; dv.classList.add("word"); showTrack = false;
+        fl.textContent = n < plan.start ? `Début dans ${hm(plan.start - n)}` : `Début prévu à ${clock(plan.start)}`;
+        fr.textContent = `${hm(t0)} à faire`;
       } else {
         const pause = t0 > 330 ? s.pauseMin : 0;
         dk.textContent = "Si tu entres maintenant, sortie à";
-        dv.textContent = clock(Math.max(n + t0 + pause, s.minOut ?? 0));
+        dv.textContent = clock(Math.max(n + t0 + pause, MO ?? 0));
         fl.textContent = `${hm(t0)} à faire`; fr.textContent = pause ? `+ ${pause} min de pause de midi` : "";
         if (n < s.winStart) setNudge(`Plage d'arrivée dès ${clock(s.winStart)}.`);
       }
@@ -623,20 +759,33 @@ svg.i{width:20px;height:20px;fill:none;stroke:currentColor;stroke-width:1.9;stro
       dk.textContent = rec.half ? "Demi-journée" : "Aujourd'hui";
       dv.textContent = TYPES[rec.type] + (rec.half ? " ½" : ""); dv.classList.add("word"); showTrack = false;
       fl.innerHTML = rec.type === "recup" ? `<b>${signed(c.balance)}</b> sur ton compteur` : (rec.half ? `Reste ${hm(c.daily)} à pointer` : "Journée sans pointage");
+    } else if (F) {
+      const amp = (c.complete ? c.last : n) - c.first;
+      if (c.complete) {
+        dk.textContent = `Sorti à ${clock(c.last)} · présence`; dv.textContent = hm(c.net); showTrack = false;
+        const back = c.last + 660;
+        fl.textContent = `Repos de 11 h : reprise dès ${back >= 1440 ? "demain " : ""}${clock(back)}`; fr.textContent = `amplitude ${hm(amp)}`;
+      } else {
+        dk.textContent = onPause ? "En pause · présence" : `Présent depuis ${clock(c.first)}`; dv.textContent = hm(c.raw);
+        pct = Math.min(100, amp / 780 * 100); knob = true;
+        fl.textContent = `Amplitude ${hm(amp)}`; fr.textContent = `13 h max : ${clock(c.first + 780)}`;
+        if (amp > 600) setNudge(`Déjà ${hm(amp)} d'amplitude : l'amplitude maximale est de 13 h.`, true);
+      }
     } else if (c.inside) {
       const { blocked, leave } = leaveOf(c);
-      dk.textContent = blocked ? `Sortie autorisée à` : "Sortie possible à";
+      dk.textContent = blocked ? `Sortie autorisée à` : timed ? "Fin de journée à" : "Sortie possible à";
       dv.textContent = clock(leave);
       if (leave > n) dr.textContent = `dans ${hm(leave - n)}`;
       else if (c.remaining < 0) dr.innerHTML = `<span class="pos">${signed(-c.remaining)}</span>`;
       else dr.textContent = "maintenant";
       pct = Math.min(100, c.raw / Math.max(1, c.raw + Math.max(0, c.remaining)) * 100); knob = true;
       fl.textContent = `Entrée ${clock(c.first)} · ${hm(c.raw)} faites`;
-      fr.textContent = blocked && c.remaining > 0 ? `${hm(c.daily)} atteintes à ${clock(c.target)}` : pauseTxt(c);
+      fr.textContent = blocked && c.remaining > 0 ? `${hm(c.daily)} atteintes à ${clock(c.target)}` : timed ? `Prévu jusqu'à ${clock(plan.end)}` : pauseTxt(c);
       if (c.gaps === 0 && c.raw >= 330 && c.daily > 330) setNudge("Plus de 5 h 30 sans pause : pense à souffler.", true);
+      else if (timed && c.first > plan.start + 2 && c.remaining > 0) setNudge(`Arrivée à ${clock(c.first)} : ${mins(c.first - plan.start)} après le début prévu.`);
       else if (c.remaining <= 0 && !blocked) setNudge("Tes heures sont faites. Bonne fin de journée !");
     } else if (onPause) {
-      const cv = calc({ ...rec, pause: false, punches: [...rec.punches, clock(n)] }, true, tk);
+      const cv = calc({ ...rec, pause: false, punches: [...rec.punches, hhmm(n)] }, true, ak);
       const { leave } = leaveOf(cv);
       dk.textContent = "Si tu reprends maintenant, sortie à";
       dv.textContent = clock(leave);
@@ -651,7 +800,7 @@ svg.i{width:20px;height:20px;fill:none;stroke:currentColor;stroke-width:1.9;stro
       fl.textContent = `${hm(c.net)} comptées`;
       fr.textContent = [c.pauseDue > 0 ? `midi ${s.pauseMin} min déduites` : (c.lunch ? `midi ${c.lunch} min` : ""), c.offered ? `${c.offered} min offertes` : ""].filter(Boolean).join(" · ");
     }
-    if (s.maxWeek && wkNet > s.maxWeek) setNudge(`${hm(wkNet)} cette semaine : au-dessus de ton maximum de ${hm(s.maxWeek)}.`, true);
+    if (!F && s.maxWeek && wkNet > s.maxWeek) setNudge(`${hm(wkNet)} cette semaine : au-dessus de ton maximum de ${hm(s.maxWeek)}.`, true);
     $("dc-track").hidden = !showTrack;
     $("fill").style.width = pct.toFixed(1) + "%";
     $("knob").style.left = pct.toFixed(1) + "%"; $("knob").hidden = !knob;
@@ -659,12 +808,13 @@ svg.i{width:20px;height:20px;fill:none;stroke:currentColor;stroke-width:1.9;stro
     // projection
     const sg = m => `<b class="${m >= 0 ? "pos" : "neg"}">${signed(m)}</b>`;
     const proj = $("proj"), inp = $("proj-out");
-    proj.hidden = !c || (!c.inside && !c.complete) || (c.absence && rec.type !== "recup" && !rec.half);
+    proj.hidden = F || !c || (!c.inside && !c.complete) || (c.absence && rec.type !== "recup" && !rec.half);
     let leaveAt = null;
-    if (c && c.inside) {
-      if (projDay !== tk) { projDay = tk; projOut = null; }
+    if (!F && c && c.inside) {
+      if (projDay !== ak) { projDay = ak; projOut = null; }
       const auto = leaveOf(c).leave;
-      const L = projOut != null ? projOut : auto;
+      let L = projOut != null ? projOut : auto;
+      if (projOut != null && L < c.first) L += 1440;    // nuit : sortie après minuit
       leaveAt = L;
       if (document.activeElement !== inp) inp.value = clock(L);
       $("proj-txt").textContent = "Si tu sors à";
@@ -674,11 +824,11 @@ svg.i{width:20px;height:20px;fill:none;stroke:currentColor;stroke-width:1.9;stro
       $("proj-wk").innerHTML = `${signed(wk)} → ${sg(wk + pb)}`;
       $("proj-tot").innerHTML = `${signed(tot)} → ${sg(tot + pb)}`;
       const w = $("proj-warn"), msgs = [];
-      if (s.minOut != null && L < s.minOut && c.daily > 330) msgs.push(`Avant ${clock(s.minOut)} : accord de la direction nécessaire.`);
+      if (MO != null && L < MO && c.daily > 330) msgs.push(`Avant ${clock(MO)} : accord de la direction nécessaire.`);
       const wkProj = wkNet + Math.max(0, c.raw + (L - n) - c.pauseDue);
       if (s.maxWeek && wkProj > s.maxWeek) msgs.push(`Semaine projetée à ${hm(wkProj)}, au-dessus de ${hm(s.maxWeek)}.`);
       w.textContent = msgs.join(" "); w.hidden = !msgs.length;
-    } else if (c && c.complete) {
+    } else if (!F && c && c.complete) {
       $("proj-txt").textContent = "Ajouté aujourd'hui";
       inp.hidden = true; $("proj-warn").hidden = true;
       $("proj-bal").className = "num big " + (c.balance >= 0 ? "pos" : "neg"); $("proj-bal").textContent = signed(c.balance);
@@ -687,45 +837,45 @@ svg.i{width:20px;height:20px;fill:none;stroke:currentColor;stroke-width:1.9;stro
     }
 
     // trajet
-    if (!c && t0 > 0) renderTransit("aller", n);
-    else if (c && c.inside) renderTransit("retour", leaveAt);
+    if (!c && planned) renderTransit("aller", n, plan);
+    else if (c && c.inside) renderTransit("retour", F ? n : leaveAt, plan);
     else renderTransit(null);
 
-    // activité
-    renderActivity(rec, c, t0, onPause);
+    renderActivity(ak, rec, c, planned, onPause, plan);
   }
   $("proj-out").addEventListener("change", e => { projOut = toMin(e.target.value); render(); });
 
-  function renderActivity(rec, c, t0, onPause) {
+  function renderActivity(ak, rec, c, planned, onPause, plan) {
     const s = state.settings, box = $("activity"), pun = rec ? rec.punches : [];
     if (!pun.length) {
-      box.innerHTML = `<button class="item" data-edit><span class="ico">${ic("clock")}</span><span class="it-m"><b>Aucun pointage pour l'instant</b><small>${t0 ? "Touche Entrée en arrivant au travail." : "Jour non travaillé."}</small></span></button>`;
+      box.innerHTML = `<button class="item" data-edit><span class="ico">${ic("clock")}</span><span class="it-m"><b>Aucun pointage pour l'instant</b><small>${planned ? "Touche Entrée en arrivant au travail." : "Jour non travaillé."}</small></span></button>`;
       return;
     }
     const p = pun.map(toMin), rows = [];
-    // pause de midi = la plus longue pause, mais seulement si elle est déjà assez longue ou si la journée est finie
-    // (le matin, une pause café n'est pas « le midi »). En pause, on compte la pause en cours.
-    const ref = onPause ? calc({ ...rec, pause: false, punches: [...pun, clock(nowMin())] }, true, dateKey(new Date())) : c;
+    const ref = onPause ? calc({ ...rec, pause: false, punches: [...pun, hhmm(nowRel(ak))] }, true, ak) : c;
     let lunchIdx = -1;
     if (ref && ref.lunch > 0 && (ref.lunch >= s.pauseMin || (c && c.complete)))
       for (let i = 2; i < p.length; i += 2) if (p[i] - p[i - 1] === ref.lunch) { lunchIdx = i; break; }
     let budget = s.offered || 0;
     for (let i = 0; i < p.length; i++) {
       let ico, col, title, sub;
-      if (i === 0) { ico = "in"; col = "blue"; title = "Entrée"; sub = p[0] < s.winStart ? `Avant la plage d'arrivée (${clock(s.winStart)})` : "Début de journée"; }
-      else if (i % 2 === 0) {
+      if (i === 0) {
+        ico = "in"; col = "blue"; title = "Entrée";
+        if (plan.start != null) { const d = p[0] - plan.start; sub = d > 2 ? `${mins(d)} après le début prévu (${clock(plan.start)})` : d < -2 ? `${mins(-d)} avant le début prévu` : "À l'heure"; }
+        else sub = isFlex() && p[0] < s.winStart ? `Avant la plage d'arrivée (${clock(s.winStart)})` : "Début de journée";
+      } else if (i % 2 === 0) {
         const g = p[i] - p[i - 1];
         ico = "go"; col = "blue";
         if (i === lunchIdx) { title = "Reprise après midi"; sub = `Pause de ${g} min · non payée${g < s.pauseMin ? ` · ${s.pauseMin} min déduites` : ""}`; }
         else { const off = Math.min(budget, g); budget -= off; title = "Reprise"; sub = off >= g ? `Pause de ${g} min · offerte` : off > 0 ? `Pause de ${g} min · ${off} offertes` : `Pause de ${g} min · non payée`; }
-      } else if (i < p.length - 1) { ico = "cup"; col = "green"; title = i + 1 === lunchIdx ? "Pause de midi" : "Pause"; sub = `jusqu'à ${pun[i + 1]}`; }
-      else if (onPause) { ico = "cup"; col = "orange"; title = "Pause en cours"; sub = `depuis ${mins(nowMin() - p[i])}`; }
-      else { ico = "out"; col = ""; title = "Sortie"; sub = c && c.complete ? `Fin de journée · ${hm(c.net)} comptées` : "Fin de journée"; }
-      rows.push(`<button class="item" data-edit><span class="ico ${col}">${ic(ico)}</span><span class="it-m"><b>${title}</b><small>${esc(sub)}</small></span><span class="it-r num">${pun[i]}</span></button>`);
+      } else if (i < p.length - 1) { ico = "cup"; col = "green"; title = i + 1 === lunchIdx ? "Pause de midi" : "Pause"; sub = `jusqu'à ${clock(p[i + 1])}`; }
+      else if (onPause) { ico = "cup"; col = "orange"; title = "Pause en cours"; sub = `depuis ${mins(nowRel(ak) - p[i])}`; }
+      else { ico = "out"; col = ""; title = "Sortie"; sub = c && c.complete ? `Fin de journée · ${hm(c.net)} ${isForfait() ? "de présence" : "comptées"}` : "Fin de journée"; }
+      rows.push(`<button class="item" data-edit><span class="ico ${col}">${ic(ico)}</span><span class="it-m"><b>${title}</b><small>${esc(sub)}</small></span><span class="it-r num">${clock(p[i])}${p[i] >= 1440 ? `<small style="display:inline;margin-left:4px">+1</small>` : ""}</span></button>`);
     }
     box.innerHTML = rows.reverse().join("");
   }
-  $("activity").addEventListener("click", e => { if (e.target.closest("[data-edit]")) openDay(dateKey(new Date())); });
+  $("activity").addEventListener("click", e => { if (e.target.closest("[data-edit]")) openDay(activeKey()); });
 
   // ---------- trajets domicile <-> travail (transport.opendata.ch) ----------
   const trCfg = () => { const t = state.settings.transit || {}; return { home: t.home || "", work: t.work || "", margin: t.margin ?? 5 }; };
@@ -741,12 +891,12 @@ svg.i{width:20px;height:20px;fill:none;stroke:currentColor;stroke-width:1.9;stro
     return num && num !== cat ? base + " " + num : base;
   }
   let trKey = null, trData = null, trBusy = false, trMeta = null, trCtx = null;
-  function renderTransit(dir, atMin) {
+  function renderTransit(dir, atMin, plan) {
     const cfg = trCfg(), box = $("transit");
-    if (!cfg.home || !cfg.work || dir == null) { box.hidden = true; return; }
+    if (!cfg.home || !cfg.work || dir == null || atMin == null) { box.hidden = true; return; }
     box.hidden = false;
     const from = dir === "aller" ? cfg.home : cfg.work, to = dir === "aller" ? cfg.work : cfg.home;
-    const t = dir === "retour" ? atMin + cfg.margin : atMin;
+    const t = Math.min(1439, dir === "retour" ? atMin + cfg.margin : atMin);
     trCtx = { dir, from, to };
     const bucket = Math.floor(Date.now() / 180000); // rafraîchi toutes les 3 min (temps réel)
     const key = [dir, from, to, t, dateKey(new Date()), bucket].join("|");
@@ -763,9 +913,10 @@ svg.i{width:20px;height:20px;fill:none;stroke:currentColor;stroke-width:1.9;stro
       const leave = first.depMin - (first.startsWalking ? 0 : cfg.margin);
       box.innerHTML = head(`Quitte le travail à ${clock(leave)}`, `${lines} · chez toi à ${first.arr}${delay}`, true);
     } else {
-      const sched = baseFor(dateKey(new Date())), pause = sched > 330 ? state.settings.pauseMin : 0;
-      const outAt = sched ? ` · sortie vers ${clock(Math.max(first.arrMin + sched + pause, state.settings.minOut ?? 0))}` : "";
-      box.innerHTML = head(`Prochain départ à ${first.dep}`, `${lines} · au travail à ${first.arr}${outAt}${delay}`, true);
+      let extra = "";
+      if (plan && plan.start != null) extra = first.arrMin > plan.start ? " · après ton début" : "";
+      else if (isFlex()) { const sched = baseFor(dateKey(new Date())), pause = sched > 330 ? state.settings.pauseMin : 0; if (sched) extra = ` · sortie vers ${clock(Math.max(first.arrMin + sched + pause, state.settings.minOut ?? 0))}`; }
+      box.innerHTML = head(`Prochain départ à ${first.dep}`, `${lines} · au travail à ${first.arr}${extra}${delay}`, true);
     }
   }
   $("transit").onclick = () => { if (Array.isArray(trData) && trData.length && trCtx) openTransitDetail(trCtx.dir, trCtx.from, trCtx.to); };
@@ -813,35 +964,35 @@ svg.i{width:20px;height:20px;fill:none;stroke:currentColor;stroke-width:1.9;stro
   let lastMin = -1;
   function tick() {
     const m = nowMin();
-    if (lastMin !== -1 && m !== lastMin && tab === "today") render();
+    if (lastMin !== -1 && m !== lastMin && tab === "today" && $("onb").hidden) render();
     lastMin = m;
   }
 
   // ---------- pointage ----------
   function punch(kind, asPause) {
-    const tk = dateKey(new Date());
-    const before = state.days[tk] ? clone(state.days[tk]) : null;
-    const rec = before ? clone(before) : { punches: [], type: "work", half: false, remote: false, pause: false };
+    const ak = activeKey();
+    const before = state.days[ak] ? clone(state.days[ak]) : null;
+    const rec = before ? clone(before) : { punches: [], type: "work", half: false, remote: false, pause: false, shift: null };
     const nextIsIn = rec.punches.length % 2 === 0;
     if ((kind === "in") !== nextIsIn) return;
-    const t = clock(nowMin());
+    const t = hhmm(nowRel(ak));
     const resuming = kind === "in" && rec.punches.length > 0 && rec.pause;
     rec.punches.push(t);
     rec.pause = kind === "out" && !!asPause;
-    saveDay(tk, rec);
+    saveDay(ak, rec);
     const b = kind === "out" && asPause ? $("act-pause") : $("act-main"); b.classList.remove("pop"); void b.offsetWidth; b.classList.add("pop");
-    const label = kind === "in" ? (resuming ? "Reprise" : rec.punches.length > 1 ? "Entrée" : "Entrée") : (asPause ? "Pause" : "Sortie");
-    toast(label + " à " + t, () => saveDay(tk, before));
+    const label = kind === "in" ? (resuming ? "Reprise" : "Entrée") : (asPause ? "Pause" : "Sortie");
+    toast(label + " à " + clock(toMin(t)), () => saveDay(ak, before));
   }
   $("act-main").onclick = () => punch($("act-main").dataset.kind || "in");
   $("act-pause").onclick = () => {
-    const tk = dateKey(new Date()), rec = state.days[tk];
+    const ak = activeKey(), rec = state.days[ak];
     if (!rec) return;
     if (rec.punches.length % 2 === 1) return punch("out", true);
-    if (rec.pause) { const before = clone(rec); saveDay(tk, { ...rec, pause: false }); toast("Journée terminée à " + rec.punches[rec.punches.length - 1], () => saveDay(tk, before)); }
+    if (rec.pause) { const before = clone(rec); saveDay(ak, { ...rec, pause: false }); toast("Journée terminée à " + clock(toMin(rec.punches[rec.punches.length - 1])), () => saveDay(ak, before)); }
   };
   $("act-abs").onclick = () => openRange();
-  $("act-fix").onclick = () => openDay(dateKey(new Date()));
+  $("act-fix").onclick = () => openDay(activeKey());
   $("act-abs").querySelector("i").innerHTML = ic("cal");
   $("act-fix").querySelector("i").innerHTML = ic("pen");
   $("spark-pill").onclick = () => { track = { mode: "month", anchor: new Date() }; showTab("track"); };
@@ -851,43 +1002,51 @@ svg.i{width:20px;height:20px;fill:none;stroke:currentColor;stroke-width:1.9;stro
   const closeSheet = () => { scrim.hidden = true; scrim.innerHTML = ""; };
   scrim.addEventListener("click", e => { if (e.target === scrim) closeSheet(); });
   document.addEventListener("keydown", e => { if (e.key === "Escape" && !scrim.hidden) closeSheet(); });
+  const sheetEl = () => scrim.querySelector(".sheet");
+  const keepScroll = fn => { const el = sheetEl(), y = el ? el.scrollTop : 0; fn(); const n = sheetEl(); if (n) n.scrollTop = y; };
 
   // ---------- modifier une journée ----------
   function openDay(k, isNew, draft) {
-    const existing = state.days[k];
-    const d = draft || { date: k, times: [...(existing ? existing.punches : [])], type: existing ? existing.type : "work", half: existing ? existing.half : false, remote: existing ? existing.remote : false };
+    const existing = state.days[k], s = state.settings;
+    const d = draft || { date: k, times: [...(existing ? existing.punches : [])], type: existing ? existing.type : "work", half: existing ? existing.half : false, remote: existing ? existing.remote : false, shift: existing ? existing.shift : null };
     const hol = holidayName(d.date || k);
-    const rows = d.times.map((t, i) => `<div class="item"><span class="ico ${i % 2 ? "" : "blue"}">${ic(i % 2 ? "out" : "in")}</span><span class="grow">${i % 2 ? (i < d.times.length - 1 ? "Pause" : "Sortie") : (i ? "Reprise" : "Entrée")}</span><input type="time" data-i="${i}" value="${t}"><button class="x" data-del="${i}" aria-label="Supprimer ce pointage">×</button></div>`).join("");
-    const canHalf = d.type === "conge" || d.type === "maladie";
+    const rows = d.times.map((t, i) => { const m = toMin(t); return `<div class="item"><span class="ico ${i % 2 ? "" : "blue"}">${ic(i % 2 ? "out" : "in")}</span><span class="grow">${i % 2 ? (i < d.times.length - 1 ? "Pause" : "Sortie") : (i ? "Reprise" : "Entrée")}${m >= 1440 ? `<small>le lendemain</small>` : ""}</span><input type="time" data-i="${i}" value="${clock(m)}"><button class="x" data-del="${i}" aria-label="Supprimer ce pointage">×</button></div>`; }).join("");
+    const canHalf = ["conge", "maladie", "rtt"].includes(d.type);
+    const shiftChips = s.type === "equipes" ? `<div class="sect">Poste</div><div class="list"><div class="chips">${[["", "Selon le planning"], ...s.shifts.map(x => [x.id, `${x.name} ${clock(x.s)}–${clock(x.e)}`]), ["off", "Repos"]].map(([id, l]) => `<button class="chip${(d.shift || "") === id ? " on" : ""}" data-shift="${id}">${esc(l)}</button>`).join("")}</div></div>` : "";
     openSheet(`<h3>${isNew ? "Ajouter un jour" : cap(longDate(parseKey(k)))}</h3>
       <div class="list"><label class="item"><span>Date${hol ? `<small>${esc(hol)}</small>` : ""}</span><input type="date" id="ed-date" value="${d.date}"></label></div>
       <div class="sect">Type de journée</div>
       <div class="list">
-        <div class="chips">${Object.keys(TYPES).map(t => `<button class="chip${d.type === t ? " on" : ""}" data-type="${t}">${TYPES[t]}</button>`).join("")}</div>
+        <div class="chips">${typesFor().map(t => `<button class="chip${d.type === t ? " on" : ""}" data-type="${t}">${TYPES[t]}</button>`).join("")}</div>
         ${canHalf ? `<label class="item"><span>Demi-journée<small>L'autre moitié se pointe normalement</small></span><input type="checkbox" class="toggle" id="ed-half" ${d.half ? "checked" : ""}></label>` : ""}
         <label class="item"><span>Télétravail</span><input type="checkbox" class="toggle" id="ed-remote" ${d.remote ? "checked" : ""}></label>
       </div>
+      ${shiftChips}
       <div class="sect">Pointages</div>
       ${d.times.length ? `<div class="list">${rows}</div>` : ""}
       <button class="addp" id="ed-add">+ Ajouter ${d.times.length % 2 ? "une sortie" : "une entrée"}</button>
-      <p class="note">${d.type === "recup" ? "Une récupération sans pointage retire la journée de ton compteur." : `Les pointages sont remis dans l'ordre. La plus longue pause compte comme pause de midi (minimum ${state.settings.pauseMin} min, non payée). Les autres pauses sont offertes jusqu'à ${state.settings.offered || 0} min par jour.`}</p>
+      <p class="note">${d.type === "recup" ? "Une récupération sans pointage retire la journée de ton compteur." : `Les pointages sont remis dans l'ordre. La plus longue pause compte comme pause de midi (minimum ${s.pauseMin} min, non payée)${s.offered ? `. Les autres pauses sont offertes jusqu'à ${s.offered} min par jour` : ""}.${s.type === "equipes" ? " Pour un poste de nuit, les heures après minuit sont comptées le lendemain automatiquement." : ""}`}</p>
       <p class="err" id="ed-err" hidden></p>
       <div class="row"><button class="ghost" id="ed-cancel">Annuler</button><button class="cta" id="ed-save">Enregistrer</button></div>
       ${existing && !isNew ? `<button class="danger" id="ed-del">Supprimer cette journée</button>` : ""}`);
-    const read = () => ({
-      date: $("ed-date").value, times: [...scrim.querySelectorAll("input[data-i]")].map(i => i.value),
-      type: d.type, half: $("ed-half") ? $("ed-half").checked : false, remote: $("ed-remote").checked
-    });
-    scrim.querySelectorAll("[data-type]").forEach(b => b.onclick = () => { const x = read(); x.type = b.dataset.type; if (!(x.type === "conge" || x.type === "maladie")) x.half = false; openDay(k, isNew, x); });
-    $("ed-add").onclick = () => { const x = read(); x.times.push(x.date === dateKey(new Date()) ? clock(nowMin()) : (x.times.length ? x.times[x.times.length - 1] : "08:00")); openDay(k, isNew, x); };
-    scrim.querySelectorAll("[data-del]").forEach(b => b.onclick = () => { const x = read(); x.times.splice(+b.dataset.del, 1); openDay(k, isNew, x); });
+    const read = () => {
+      const date = $("ed-date").value, raw = [...scrim.querySelectorAll("input[data-i]")].map(i => i.value).filter(Boolean);
+      // nuit : une heure plus tôt que l'entrée appartient au lendemain
+      const p = planFor(date || k, { shift: d.shift }), first = raw.length ? toMin(raw[0]) : 0;
+      const times = raw.map((v, i) => (i > 0 && p.end > 1440 && toMin(v) < first - 60) ? hhmm(toMin(v) + 1440) : v);
+      return { date, times, type: d.type, half: $("ed-half") ? $("ed-half").checked : false, remote: $("ed-remote").checked, shift: d.shift };
+    };
+    scrim.querySelectorAll("[data-type]").forEach(b => b.onclick = () => { const x = read(); x.type = b.dataset.type; if (!["conge", "maladie", "rtt"].includes(x.type)) x.half = false; keepScroll(() => openDay(k, isNew, x)); });
+    scrim.querySelectorAll("[data-shift]").forEach(b => b.onclick = () => { const x = read(); x.shift = b.dataset.shift || null; keepScroll(() => openDay(k, isNew, x)); });
+    $("ed-add").onclick = () => { const x = read(); const ak = activeKey(); x.times.push(x.date === ak ? hhmm(nowRel(ak)) : (x.times.length ? x.times[x.times.length - 1] : "08:00")); keepScroll(() => openDay(k, isNew, x)); };
+    scrim.querySelectorAll("[data-del]").forEach(b => b.onclick = () => { const x = read(); x.times.splice(+b.dataset.del, 1); keepScroll(() => openDay(k, isNew, x)); });
     $("ed-cancel").onclick = closeSheet;
     $("ed-save").onclick = () => {
       const x = read(), err = m => { $("ed-err").textContent = m; $("ed-err").hidden = false; };
       if (!x.date) return err("Choisis une date.");
       const punches = sortTimes(x.times);
       const keepPause = !!(existing && existing.pause) && x.date === k && punches.length % 2 === 0 && punches.join() === existing.punches.join();
-      const rec = { punches, type: x.type, half: x.half, remote: x.remote, pause: keepPause };
+      const rec = { punches, type: x.type, half: x.half, remote: x.remote, pause: keepPause, shift: x.shift || null };
       if (!meaningful(rec) && !existing) return err("Ajoute une entrée ou choisis un type de journée.");
       if (!isNew && x.date !== k && existing) saveDay(k, null);
       saveDay(x.date, rec); closeSheet(); toast("Enregistré");
@@ -898,7 +1057,6 @@ svg.i{width:20px;height:20px;fill:none;stroke:currentColor;stroke-width:1.9;stro
 
   // ---------- courbe : solde cumulé ----------
   const CW = 340, CH = 180, CL = 42, CR = 12, CT = 12, CB = 24;
-  const hmShort = m => Math.floor(m / 60) + "h" + pad(m % 60);
   function chartSVG(pts, slots, xlabels) {
     if (!pts.length) return `<svg viewBox="0 0 ${CW} ${CH}" role="img" aria-label="Aucune donnée"><text class="empty" x="${CW / 2}" y="${CH / 2}" text-anchor="middle">Pas encore de journée terminée sur cette période</text></svg>`;
     const vals = pts.map(p => p.cum);
@@ -956,7 +1114,7 @@ svg.i{width:20px;height:20px;fill:none;stroke:currentColor;stroke-width:1.9;stro
   const avgClock = arr => arr.length ? clock(arr.reduce((a, b) => a + b, 0) / arr.length) : "—";
 
   function renderTrack() {
-    const now = new Date(), tk = dateKey(now), { mode, anchor } = track, s = state.settings;
+    const now = new Date(), ak = activeKey(), { mode, anchor } = track, s = state.settings, F = isForfait();
     $("top-r").innerHTML = `<button class="iconbtn" id="h-export" aria-label="Exporter le mois en tableur">${ic("share")}</button>`;
     $("h-export").onclick = () => exportMonth(anchor.getFullYear(), anchor.getMonth());
     let html = "", isCurrent, navTxt, after = () => {};
@@ -966,53 +1124,55 @@ svg.i{width:20px;height:20px;fill:none;stroke:currentColor;stroke-width:1.9;stro
       const weekendUsed = keys.slice(5).some(k => state.days[k] || baseFor(k));
       const slots = weekendUsed ? 7 : 5;
       navTxt = `Semaine ${isoWeek(mon)} · ${short(mon)} – ${short(addDays(mon, slots - 1))}`;
-      const t = totalsOf(keys, tk);
+      const t = totalsOf(keys, ak);
       let plan = 0; keys.forEach(k => { plan += targetFor(k, state.days[k] || { type: "work" }); });
-      // barres
+      let presence = 0, wdays = 0;
+      keys.forEach(k => { const r = state.days[k], c = r && calc(r, k === ak, k); if (c && !c.absence) { presence += c.complete ? c.net : c.raw; wdays++; } });
       const bars = keys.slice(0, slots).map(k => {
-        const d = parseKey(k), r = state.days[k], c = r && calc(r, k === tk, k), tgt = targetFor(k, r || { type: "work" });
+        const d = parseKey(k), r = state.days[k], c = r && calc(r, k === ak, k), tgt = F ? (baseFor(k) && !holidayName(k) ? 480 : 0) : targetFor(k, r || { type: "work" });
         let val = 0, cls = "";
-        if (c && c.complete && !c.absence) { val = c.net; }
+        if (c && c.complete && !c.absence) val = c.net;
         else if (c && !c.absence) { val = c.raw; cls = "live"; }
-        else if (!tgt || (c && c.absence)) { cls = "off"; }
-        else if (d > now) { val = tgt; cls = "todo"; }
-        else if (k !== tk) { val = tgt; cls = "miss"; }
-        else { val = tgt; cls = "todo"; }
+        else if (!tgt || (c && c.absence)) cls = "off";
+        else if (d > now || k === ak) { val = tgt; cls = "todo"; }
+        else { val = tgt; cls = "miss"; }
         return { k, d, val, cls, tgt };
       });
       const tgts = bars.map(b => b.tgt).filter(Boolean);
       const scale = Math.max(60, ...bars.map(b => b.val), ...tgts) * 1.12;
       const freq = {}; tgts.forEach(v => freq[v] = (freq[v] || 0) + 1);
-      const ref = tgts.length ? +Object.keys(freq).sort((a, b) => freq[b] - freq[a])[0] : 0;
+      const ref = !F && tgts.length ? +Object.keys(freq).sort((a, b) => freq[b] - freq[a])[0] : 0;
       const cols = `grid-template-columns:repeat(${slots},minmax(0,1fr))`;
       const barsHtml = `<div class="card bars-wrap">
         <div class="bars" style="${cols}">${ref ? `<div class="tl" style="bottom:${(ref / scale * 120).toFixed(1)}px"></div>` : ""}
           ${bars.map(b => `<button class="${b.cls}" data-day="${b.k}" style="height:${b.cls === "off" ? 6 : Math.max(6, b.val / scale * 120).toFixed(1)}px" aria-label="${esc(longDate(b.d))}"></button>`).join("")}</div>
-        <div class="bar-l" style="${cols}">${bars.map(b => b.k === tk ? `<b>${"DLMMJVS"[b.d.getDay()]}</b>` : `<span>${"DLMMJVS"[b.d.getDay()]}</span>`).join("")}</div>
+        <div class="bar-l" style="${cols}">${bars.map(b => b.k === ak ? `<b>${"DLMMJVS"[b.d.getDay()]}</b>` : `<span>${"DLMMJVS"[b.d.getDay()]}</span>`).join("")}</div>
         ${ref ? `<p class="note" style="margin:0">Pointillés : ${hm(ref)} par jour</p>` : ""}
       </div>`;
-      // liste
       const rows = [];
       keys.slice().reverse().forEach(k => {
-        const d = parseKey(k), r = state.days[k], hol = holidayName(k), base = baseFor(k), c = r && calc(r, k === tk, k);
+        const d = parseKey(k), r = state.days[k], hol = holidayName(k), p = planFor(k), base = p.net, c = r && calc(r, k === ak, k);
         if (!r && !base && !hol) return;
         const future = d > now && !r;
         let main, det, right;
+        const shiftTxt = p.shift ? p.shift.name + " · " : "";
         if (r && r.punches.length) {
-          main = c.complete ? hm(c.net) : (k === tk ? `En cours · ${hm(c.raw)}` : "Incomplet");
-          det = `${clock(c.first)} → ${c.complete ? clock(c.last) : "…"}${c.lunch ? ` · midi ${c.lunch} min` : ""}`;
-        } else if (r) { main = TYPES[r.type] + (r.half ? " ½" : ""); det = r.type === "recup" ? "pris sur le compteur" : "sans pointage"; }
+          main = c.complete ? hm(c.net) : (k === ak ? `En cours · ${hm(c.raw)}` : "Incomplet");
+          det = `${shiftTxt}${clock(c.first)} → ${c.complete ? clock(c.last) : "…"}${c.lunch ? ` · midi ${c.lunch} min` : ""}`;
+        } else if (r && r.type !== "work") { main = TYPES[r.type] + (r.half ? " ½" : ""); det = r.type === "recup" ? "pris sur le compteur" : "sans pointage"; }
         else if (hol) { main = hol; det = "Jour férié"; }
-        else { main = future ? "À venir" : "Pas de pointage"; det = future ? `${hm(base)} prévues` : "Touche pour ajouter"; }
+        else if (r && r.shift === "off") { main = "Repos"; det = "Poste modifié"; }
+        else { main = future ? "À venir" : "Pas de pointage"; det = p.start != null ? `${shiftTxt}${clock(p.start)} – ${clock(p.end)}` : future ? (F ? "Jour travaillé prévu" : `${hm(base)} prévues`) : "Touche pour ajouter"; }
         if (r && r.type !== "work" && r.punches.length) det = TYPES[r.type] + (r.half ? " ½" : "") + " · " + det;
         if (r && r.remote) det += " · télétravail";
-        right = c && c.complete && (r.punches.length || r.type === "recup") ? balR(c.balance) : `<span class="it-r mute">${c && !c.complete ? "…" : "—"}</span>`;
+        if (F) right = c && !c.absence && r.punches.length ? `<span class="it-r num mute">${c.complete ? "1 j" : "…"}</span>` : `<span class="it-r mute">—</span>`;
+        else right = c && c.complete && (r.punches.length || r.type === "recup") ? balR(c.balance) : `<span class="it-r mute">${c && !c.complete ? "…" : "—"}</span>`;
         rows.push(`<button class="item${future ? " future" : ""}" data-day="${k}"><span class="dnum"><small>${JC[d.getDay()]}</small><b>${d.getDate()}</b></span><span class="it-m"><b class="num">${esc(main)}</b><small class="num">${esc(det)}</small></span>${right}</button>`);
       });
-      const warn = s.maxWeek && t.worked > s.maxWeek ? `<p class="err">${hm(t.worked)} travaillées : au-dessus de ton maximum hebdo de ${hm(s.maxWeek)}.</p>` : "";
-      html = `<div class="big-sum"><b class="num ${t.n ? (t.bal >= 0 ? "pos" : "neg") : ""}">${t.n ? signed(t.bal) : "—"}</b><small class="num">${hm(t.worked)} comptées · ${hm(plan)} prévues</small></div>
-        ${barsHtml}${warn}
-        ${rows.length ? `<div class="list">${rows.join("")}</div>` : ""}`;
+      const warn = !F && s.maxWeek && t.worked > s.maxWeek ? `<p class="err">${hm(t.worked)} travaillées : au-dessus de ton maximum hebdo de ${hm(s.maxWeek)}.</p>` : "";
+      const head = F ? `<div class="big-sum"><b class="num">${plural(wdays, "jour")}</b><small class="num">${hm(presence)} de présence cette semaine</small></div>`
+        : `<div class="big-sum"><b class="num ${t.n ? (t.bal >= 0 ? "pos" : "neg") : ""}">${t.n ? signed(t.bal) : "—"}</b><small class="num">${hm(t.worked)} comptées · ${hm(plan)} prévues</small></div>`;
+      html = `${head}${barsHtml}${warn}${rows.length ? `<div class="list">${rows.join("")}</div>` : ""}`;
     } else {
       const y = anchor.getFullYear(), m = anchor.getMonth(), first = new Date(y, m, 1), lastD = new Date(y, m + 1, 0);
       isCurrent = y === now.getFullYear() && m === now.getMonth();
@@ -1022,26 +1182,29 @@ svg.i{width:20px;height:20px;fill:none;stroke:currentColor;stroke-width:1.9;stro
       for (let d = 1; d <= lastD.getDate(); d++) { const k = dateKey(new Date(y, m, d)); if (state.days[k]) keys.push(k); }
       let cum = 0; const ins = [], outs = [], worked = []; let remote = 0;
       keys.forEach(k => {
-        const r = state.days[k], c = calcK(k, tk), d = parseKey(k);
+        const r = state.days[k], c = calcK(k, ak), d = parseKey(k);
         if (r.remote) remote++;
         if (c && c.complete && r.punches.length) { ins.push(c.first); outs.push(c.last); worked.push(c.net); }
         if (c && c.complete) { cum += c.balance; pts.push({ slot: d.getDate() - 1, label: longDate(d), day: c.balance, cum }); }
       });
-      const t = totalsOf(keys, tk);
+      const t = totalsOf(keys, ak);
       const weeks = []; let mon = mondayOf(first);
       while (mon <= lastD && mon <= now) {
         const wk = keys.filter(k => { const d = parseKey(k); return d >= mon && d < addDays(mon, 7); });
-        const tw = totalsOf(wk, tk);
+        const tw = totalsOf(wk, ak);
         const a = mon < first ? first : mon, b = addDays(mon, 6) > lastD ? lastD : addDays(mon, 6);
-        weeks.unshift(`<button class="item" data-week="${dateKey(mon)}"><span class="dnum"><small>Sem.</small><b>${isoWeek(mon)}</b></span><span class="it-m"><b class="num">${hm(tw.worked)}</b><small>${short(a)} – ${short(b)} · ${plural(tw.n, "jour")}</small></span>${tw.n ? balR(tw.bal) : `<span class="it-r mute">—</span>`}</button>`);
+        const right = F ? `<span class="it-r num mute">${tw.days} j</span>` : tw.n ? balR(tw.bal) : `<span class="it-r mute">—</span>`;
+        weeks.unshift(`<button class="item" data-week="${dateKey(mon)}"><span class="dnum"><small>Sem.</small><b>${isoWeek(mon)}</b></span><span class="it-m"><b class="num">${hm(tw.worked)}</b><small>${short(a)} – ${short(b)} · ${plural(tw.n, "jour")}</small></span>${right}</button>`);
         mon = addDays(mon, 7);
       }
-      html = `<div class="big-sum"><b class="num ${t.n ? (t.bal >= 0 ? "pos" : "neg") : ""}">${t.n ? signed(t.bal) : "—"}</b><small class="num">${hm(t.worked)} comptées · ${plural(keys.length, "jour")} enregistré${keys.length > 1 ? "s" : ""}</small></div>
-        <div class="card chart" id="chart"><div class="readout"><span class="l"></span><span class="v num"></span></div>${chartSVG(pts, slots, xl)}</div>
+      const head = F ? `<div class="big-sum"><b class="num">${plural(t.days, "jour")}</b><small class="num">${hm(t.worked)} de présence ce mois</small></div>`
+        : `<div class="big-sum"><b class="num ${t.n ? (t.bal >= 0 ? "pos" : "neg") : ""}">${t.n ? signed(t.bal) : "—"}</b><small class="num">${hm(t.worked)} comptées · ${plural(keys.length, "jour")} enregistré${keys.length > 1 ? "s" : ""}</small></div>`;
+      html = `${head}
+        ${F ? "" : `<div class="card chart" id="chart"><div class="readout"><span class="l"></span><span class="v num"></span></div>${chartSVG(pts, slots, xl)}</div>`}
         <div class="tiles"><div class="tile"><span>Arrivée moy.</span><b class="num">${avgClock(ins)}</b></div><div class="tile"><span>Sortie moy.</span><b class="num">${avgClock(outs)}</b></div><div class="tile"><span>Par jour</span><b class="num">${worked.length ? hm(worked.reduce((a, b) => a + b, 0) / worked.length) : "—"}</b></div></div>
         ${weeks.length ? `<div class="sect">Semaines</div><div class="list">${weeks.join("")}</div>` : `<p class="note">Rien à afficher pour ce mois.</p>`}
         ${remote ? `<p class="note">${plural(remote, "jour")} de télétravail ce mois.</p>` : ""}`;
-      after = () => bindChart($("chart"), pts, slots);
+      if (!F) after = () => bindChart($("chart"), pts, slots);
     }
     const v = $("v-track");
     v.innerHTML = `<div class="seg" role="tablist"><button data-mode="week" class="${mode === "week" ? "on" : ""}">Semaine</button><button data-mode="month" class="${mode === "month" ? "on" : ""}">Mois</button></div>
@@ -1059,20 +1222,23 @@ svg.i{width:20px;height:20px;fill:none;stroke:currentColor;stroke-width:1.9;stro
   }
 
   function exportMonth(y, m) {
-    const tk = dateKey(new Date()), lastD = new Date(y, m + 1, 0).getDate();
-    const lines = [["Date", "Jour", "Type", "Télétravail", "Pointages", "Travaillé", "Prévu", "Solde"].join(";")];
-    let tot = 0;
+    const ak = activeKey(), lastD = new Date(y, m + 1, 0).getDate(), F = isForfait(), s = state.settings;
+    const who = [s.name, s.lastName].filter(Boolean).join(" ");
+    const lines = [];
+    if (who || s.company) lines.push([who, s.company, WORK[s.type].name].join(";"));
+    lines.push(["Date", "Jour", "Type", "Poste", "Télétravail", "Pointages", F ? "Présence" : "Travaillé", F ? "" : "Prévu", F ? "" : "Solde"].join(";"));
+    let tot = 0, nd = 0;
     const h = v => hmShort(Math.max(0, Math.round(v)));
     const sgn = v => (v < 0 ? "-" : "+") + h(Math.abs(v));
     for (let d = 1; d <= lastD; d++) {
       const k = dateKey(new Date(y, m, d)), r = state.days[k], hol = holidayName(k);
       if (!r && !hol) continue;
-      const c = calcK(k, tk);
-      if (c && c.complete) tot += c.balance;
-      lines.push([k, JL[parseKey(k).getDay()], r ? TYPES[r.type] + (r.half ? " (1/2)" : "") : "Férié" + (hol ? " - " + hol : ""), r && r.remote ? "oui" : "",
-        r ? r.punches.join(" ") : "", c && c.complete ? h(c.net) : "", c ? h(c.daily) : "", c && c.complete ? sgn(c.balance) : ""].join(";"));
+      const c = calcK(k, ak), p = planFor(k);
+      if (c && c.complete) { tot += c.balance; if (!c.absence) nd++; }
+      lines.push([k, JL[parseKey(k).getDay()], r ? TYPES[r.type] + (r.half ? " (1/2)" : "") : "Férié" + (hol ? " - " + hol : ""), p.shift ? p.shift.name : "", r && r.remote ? "oui" : "",
+        r ? r.punches.map(t => clock(toMin(t))).join(" ") : "", c && c.complete ? h(c.net) : "", F ? "" : c ? h(c.daily) : "", F ? "" : c && c.complete ? sgn(c.balance) : ""].join(";"));
     }
-    lines.push(["Total", "", "", "", "", "", "", sgn(tot)].join(";"));
+    lines.push(["Total", "", "", "", "", "", F ? nd + " jours" : "", "", F ? "" : sgn(tot)].join(";"));
     shareFile(`balancier-${y}-${pad(m + 1)}.csv`, "﻿" + lines.join("\n"), "text/csv");
   }
   async function shareFile(name, text, type) {
@@ -1087,26 +1253,25 @@ svg.i{width:20px;height:20px;fill:none;stroke:currentColor;stroke-width:1.9;stro
 
   // ---------- Absences ----------
   function renderAbs() {
-    const now = new Date(), tk = dateKey(now), y = now.getFullYear(), s = state.settings;
+    const now = new Date(), tk = dateKey(now), y = now.getFullYear(), s = state.settings, FR = s.holidays === "FR" || isForfait();
     $("top-r").innerHTML = `<span class="status" style="color:var(--muted)">${y}</span>`;
     const yk = Object.keys(state.days).filter(k => k.startsWith(String(y))).sort();
-    let vacTaken = 0, vacPlanned = 0, sick = 0, recup = 0, remote = 0;
+    let vacTaken = 0, vacPlanned = 0, sick = 0, recup = 0, rtt = 0, remote = 0;
     yk.forEach(k => {
       const r = state.days[k], amt = r.half ? .5 : 1;
       if (r.type === "conge") { if (k <= tk) vacTaken += amt; else vacPlanned += amt; }
       if (r.type === "maladie") sick += amt;
       if (r.type === "recup") recup += 1;
+      if (r.type === "rtt") rtt += amt;
       if (r.remote) remote++;
     });
     const left = s.vacDays - vacTaken - vacPlanned;
     const pct = s.vacDays ? Math.min(100, (vacTaken + vacPlanned) / s.vacDays * 100) : 0;
-    // à venir : absences posées + jours fériés, triés
-    const H = s.holidays === "GE" ? { ...holidaysGE(y), ...holidaysGE(y + 1) } : {};
+    const H = { ...holidaysFor(y), ...holidaysFor(y + 1) };
     const up = [];
     Object.keys(state.days).filter(k => k > tk && state.days[k].type !== "work").forEach(k => up.push({ k, kind: "abs" }));
     Object.keys(H).filter(k => k > tk && !(state.days[k] && state.days[k].type !== "work")).sort().slice(0, 3).forEach(k => up.push({ k, kind: "hol" }));
     up.sort((a, b) => a.k < b.k ? -1 : 1);
-    // regroupe les absences consécutives du même type
     const group = list => {
       const out = [];
       list.forEach(e => {
@@ -1138,7 +1303,7 @@ svg.i{width:20px;height:20px;fill:none;stroke:currentColor;stroke-width:1.9;stro
         <div class="meter"><i style="width:${pct.toFixed(1)}%"></i></div>
         <div class="meter-l num"><span>${fmtDays(vacTaken)} pris${vacPlanned ? ` · ${fmtDays(vacPlanned)} planifiés` : ""}</span><span>${fmtDays(s.vacDays)} par an</span></div>
       </div>
-      <div class="tiles"><div class="tile"><span>Maladie</span><b class="num">${fmtDays(sick)} j</b></div><div class="tile"><span>Récup</span><b class="num">${recup} j</b></div><div class="tile"><span>Télétravail</span><b class="num">${remote}${s.remoteCap ? `/${s.remoteCap}` : ""} j</b></div></div>
+      <div class="tiles"><div class="tile"><span>Maladie</span><b class="num">${fmtDays(sick)} j</b></div>${FR ? `<div class="tile"><span>RTT</span><b class="num">${fmtDays(rtt)} j</b></div>` : `<div class="tile"><span>Récup</span><b class="num">${recup} j</b></div>`}<div class="tile"><span>Télétravail</span><b class="num">${remote}${s.remoteCap ? `/${s.remoteCap}` : ""} j</b></div></div>
       ${s.remoteCap && remote > s.remoteCap ? `<p class="err">Plafond de télétravail dépassé (${remote} / ${s.remoteCap} jours).</p>` : ""}
       <div class="sect">À venir</div>
       ${upcoming.length ? `<div class="list">${upcoming.map(rowOf).join("")}</div>` : `<p class="note">Aucune absence planifiée.</p>`}
@@ -1152,12 +1317,13 @@ svg.i{width:20px;height:20px;fill:none;stroke:currentColor;stroke-width:1.9;stro
     const today = dateKey(new Date());
     const d = draft || { from: today, to: today, type: "conge", half: false };
     const single = d.from === d.to;
+    const kinds = ["conge", "rtt", "maladie", "recup"].filter(t => typesFor().includes(t));
     openSheet(`<h3>Poser une absence</h3>
       <div class="list">
         <label class="item"><span>Du</span><input type="date" id="rg-from" value="${d.from}"></label>
         <label class="item"><span>Au</span><input type="date" id="rg-to" value="${d.to}"></label>
       </div>
-      <div class="list"><div class="chips">${["conge", "maladie", "recup"].map(t => `<button class="chip${d.type === t ? " on" : ""}" data-type="${t}">${TYPES[t]}</button>`).join("")}</div>
+      <div class="list"><div class="chips">${kinds.map(t => `<button class="chip${d.type === t ? " on" : ""}" data-type="${t}">${TYPES[t]}</button>`).join("")}</div>
         ${single && d.type !== "recup" ? `<label class="item"><span>Demi-journée</span><input type="checkbox" class="toggle" id="rg-half" ${d.half ? "checked" : ""}></label>` : ""}
       </div>
       <p class="note" id="rg-info"></p>
@@ -1165,7 +1331,7 @@ svg.i{width:20px;height:20px;fill:none;stroke:currentColor;stroke-width:1.9;stro
       <div class="row"><button class="ghost" id="rg-cancel">Annuler</button><button class="cta" id="rg-save">Enregistrer</button></div>`);
     const read = () => ({ from: $("rg-from").value, to: $("rg-to").value, type: d.type, half: $("rg-half") ? $("rg-half").checked : false });
     const daysIn = x => { const out = []; if (!x.from || !x.to) return out; let a = parseKey(x.from); const b = parseKey(x.to); while (a <= b && out.length < 370) { const k = dateKey(a); if (baseFor(k) && !holidayName(k)) out.push(k); a = addDays(a, 1); } return out; };
-    const info = () => { const x = read(), n = daysIn(x).length; $("rg-info").textContent = n ? `${n === 1 && x.half ? "½ jour ouvré" : plural(n, "jour") + " ouvré" + (n > 1 ? "s" : "")} (week-ends et fériés exclus).` : "Aucun jour ouvré dans cette période."; };
+    const info = () => { const x = read(), n = daysIn(x).length; $("rg-info").textContent = n ? `${n === 1 && x.half ? "½ jour ouvré" : plural(n, "jour") + " ouvré" + (n > 1 ? "s" : "")} (jours non travaillés et fériés exclus).` : "Aucun jour travaillé dans cette période."; };
     info();
     ["rg-from", "rg-to"].forEach(id => $(id).addEventListener("change", () => {
       if (id === "rg-from" && $("rg-to").value < $("rg-from").value) $("rg-to").value = $("rg-from").value;
@@ -1177,62 +1343,295 @@ svg.i{width:20px;height:20px;fill:none;stroke:currentColor;stroke-width:1.9;stro
     $("rg-save").onclick = () => {
       const x = read(), ks = daysIn(x), err = m => { $("rg-err").textContent = m; $("rg-err").hidden = false; };
       if (x.to < x.from) return err("La date de fin doit être après la date de début.");
-      if (!ks.length) return err("Aucun jour ouvré à poser dans cette période.");
-      ks.forEach(k => { const ex = state.days[k] || { punches: [], type: "work", half: false, remote: false, pause: false }; state.days[k] = { ...ex, type: x.type, half: ks.length === 1 ? x.half : false }; });
+      if (!ks.length) return err("Aucun jour travaillé à poser dans cette période.");
+      ks.forEach(k => { const ex = state.days[k] || { punches: [], type: "work", half: false, remote: false, pause: false, shift: null }; state.days[k] = { ...ex, type: x.type, half: ks.length === 1 ? x.half : false }; });
       lsWrite(); closeSheet(); render();
       toast(`${ks.length === 1 && x.half ? "½ jour" : plural(ks.length, "jour")} · ${TYPES[x.type]}`);
     };
   }
 
+  // ---------- profil de travail : éditeur partagé (accueil + réglages) ----------
+  const rotIndexNow = s => { if (!s.rotAnchor) return 0; const w = Math.round((mondayOf(new Date()) - parseKey(s.rotAnchor)) / (7 * 864e5)), L = s.rotation.length; return ((w % L) + L) % L; };
+  function draftFrom(s) {
+    const weekly = s.sched.reduce((a, b) => a + b, 0);
+    const workdays = s.type === "fixe" ? s.fixed.map(Boolean) : ["equipes", "forfait"].includes(s.type) ? [...s.days] : s.sched.map(v => v > 0);
+    const f0 = s.fixed.find(Boolean) || { s: 480, e: 1020 };
+    return {
+      name: s.name || "", lastName: s.lastName || "", company: s.company || "", region: s.holidays || "GE",
+      type: s.type, workdays, weekly: weekly || FULL[s.holidays] || 2520, rate: s.rate || 100, full: FULL[s.holidays] || 2520,
+      sched: [...s.sched], fixed: s.fixed.map(x => x ? { ...x } : null), fs: f0.s, fe: f0.e,
+      shifts: clone(s.shifts), rotation: [...s.rotation], rotNow: rotIndexNow(s),
+      forfaitDays: s.forfaitDays || 218, winStart: s.winStart, minOut: s.minOut,
+      pauseMin: s.pauseMin, offered: s.offered || 0, vacDays: s.vacDays, maxWeek: s.maxWeek
+    };
+  }
+  const spread = d => { const on = d.workdays.filter(Boolean).length; const per = on ? Math.round(d.weekly / on) : 0; d.sched = d.workdays.map(w => w ? per : 0); };
+  function applyDraft(d) {
+    const s = state.settings;
+    Object.assign(s, { name: d.name.trim(), lastName: d.lastName.trim(), company: d.company.trim(), holidays: d.region, type: d.type,
+      pauseMin: d.pauseMin, offered: d.offered, vacDays: d.vacDays, maxWeek: d.maxWeek });
+    if (d.type === "variable" || d.type === "partiel") { s.sched = [...d.sched]; s.rate = d.rate; s.winStart = d.winStart; s.minOut = d.minOut; }
+    if (d.type === "fixe") s.fixed = d.fixed.map(x => x ? { ...x } : null);
+    if (d.type === "equipes") { s.shifts = clone(d.shifts); s.rotation = [...d.rotation]; s.days = [...d.workdays]; s.rotAnchor = dateKey(addDays(mondayOf(new Date()), -7 * d.rotNow)); }
+    if (d.type === "forfait") { s.forfaitDays = d.forfaitDays; s.days = [...d.workdays]; }
+    s.onboarded = true;
+    trKey = null;
+    lsWrite();
+  }
+  const dayChips = d => `<div class="days">${WEEK.map(w => `<button data-dow="${w}" class="${d.workdays[w] ? "on" : ""}" aria-pressed="${d.workdays[w]}">${"DLMMJVS"[w]}</button>`).join("")}</div>`;
+  const typeChoices = d => `<div class="choices">${Object.keys(WORK).map(t => `<button class="choice${d.type === t ? " on" : ""}" data-wtype="${t}"><span class="ico big blue">${ic(WORK[t].ico)}</span><span class="it-m"><b>${WORK[t].name}</b><small>${WORK[t].desc}</small></span><span class="radio"></span></button>`).join("")}</div>`;
+  function detailsHTML(d) {
+    const perDay = d.workdays.filter(Boolean).length ? Math.round(d.weekly / d.workdays.filter(Boolean).length) : 0;
+    const days = `<div class="sect">Jours travaillés</div><div class="list">${dayChips(d)}</div>`;
+    if (d.type === "variable" || d.type === "partiel") {
+      return `${d.type === "partiel" ? `<div class="list">
+          <label class="item"><span>Taux d'activité (%)</span><input type="number" inputmode="numeric" min="5" max="100" data-f="rate" value="${d.rate}" style="max-width:70px"></label>
+          <label class="item"><span>Temps plein (h par semaine)<small>Dans ton entreprise</small></span><input type="number" inputmode="decimal" step="0.25" min="1" max="60" data-f="full" value="${+(d.full / 60).toFixed(2)}" style="max-width:70px"></label>
+        </div>` : `<div class="list">
+          <label class="item"><span>Heures par semaine</span><input type="number" inputmode="decimal" step="0.25" min="1" max="70" data-f="weekly" value="${+(d.weekly / 60).toFixed(2)}" style="max-width:70px"></label>
+        </div>`}
+        ${days}
+        <p class="note">${d.type === "partiel" ? `${d.rate} % de ${hm(d.full)} = <b>${hm(d.weekly)}</b> par semaine, ` : ""}soit <b>${hm(perDay)}</b> par jour travaillé.</p>
+        <div class="list">
+          <label class="item"><span>Arrivée possible dès<small>Début de ta plage d'arrivée</small></span><input type="time" data-f="winStart" value="${clock(d.winStart)}"></label>
+          <label class="item"><span>Sortie au plus tôt<small>Facultatif : avant, accord nécessaire</small></span><input type="time" data-f="minOut" value="${d.minOut != null ? clock(d.minOut) : ""}"></label>
+        </div>
+        <div class="list"><details class="more"><summary>Ajuster jour par jour</summary>${WEEK.filter(w => d.workdays[w]).map(w => `<label class="item"><span>${cap(JL[w])}</span><input type="time" data-sched="${w}" value="${clock(d.sched[w] || 0)}"></label>`).join("")}</details></div>`;
+    }
+    if (d.type === "fixe") {
+      return `${days}
+        <div class="list">
+          <label class="item"><span>Début</span><input type="time" data-f="fs" value="${clock(d.fs)}"></label>
+          <label class="item"><span>Fin</span><input type="time" data-f="fe" value="${clock(d.fe)}"></label>
+        </div>
+        <p class="note">Soit <b>${hm(netOf(((d.fe - d.fs) + 1440) % 1440))}</b> de travail par jour, pause de midi déduite.</p>
+        <div class="list"><details class="more"><summary>Horaire différent selon les jours</summary>${WEEK.filter(w => d.fixed[w]).map(w => `<div class="item"><span class="grow">${cap(JL[w])}</span><input type="time" class="tshort" data-fx="${w}" data-p="s" value="${clock(d.fixed[w].s)}"><span style="color:var(--muted)">–</span><input type="time" class="tshort" data-fx="${w}" data-p="e" value="${clock(d.fixed[w].e)}"></div>`).join("")}</details></div>`;
+    }
+    if (d.type === "equipes") {
+      const opts = sel => d.shifts.map(x => `<option value="${x.id}" ${sel === x.id ? "selected" : ""}>${esc(x.name)}</option>`).join("") + `<option value="off" ${sel === "off" ? "selected" : ""}>Repos</option>`;
+      return `<div class="sect">Tes postes</div>
+        <div class="list">${d.shifts.map((x, i) => `<div class="item shrow"><input type="text" class="tname" data-sh="${i}" data-p="name" value="${esc(x.name)}" aria-label="Nom du poste">${d.shifts.length > 1 ? `<button class="x" data-shdel="${i}" aria-label="Supprimer ce poste">×</button>` : ""}<span class="shtimes"><input type="time" data-sh="${i}" data-p="s" value="${clock(x.s)}" aria-label="Début"><span>–</span><input type="time" data-sh="${i}" data-p="e" value="${clock(x.e)}" aria-label="Fin">${(x.e <= x.s) ? `<small style="display:inline;margin:0">+1 j</small>` : ""}</span></div>`).join("")}</div>
+        <button class="addp" id="sh-add">+ Ajouter un poste</button>
+        ${days}
+        <div class="sect">Rotation</div>
+        <div class="list">${d.rotation.map((id, i) => `<div class="item"><span class="grow">Semaine ${i + 1}</span><select data-rot="${i}">${opts(id)}</select>${d.rotation.length > 1 ? `<button class="x" data-rotdel="${i}" aria-label="Retirer cette semaine">×</button>` : ""}</div>`).join("")}
+          <label class="item"><span>Cette semaine, tu es en<small>Semaine ${isoWeek(new Date())} du calendrier</small></span><select data-f="rotNow">${d.rotation.map((_, i) => `<option value="${i}" ${d.rotNow === i ? "selected" : ""}>Semaine ${i + 1}</option>`).join("")}</select></label>
+        </div>
+        <button class="addp" id="rot-add">+ Ajouter une semaine au cycle</button>
+        <p class="note">Un poste de nuit qui finit après minuit est compté sur le jour où il commence. Tu peux changer le poste d'un jour précis en touchant ce jour.</p>`;
+    }
+    return `<div class="list"><label class="item"><span>Jours travaillés par an<small>218 pour un forfait plein</small></span><input type="number" inputmode="numeric" min="1" max="235" data-f="forfaitDays" value="${d.forfaitDays}" style="max-width:70px"></label></div>
+      ${days}
+      <p class="note">Pas de compteur d'heures : Balancier compte tes jours travaillés, surveille ton amplitude (13 h max) et ton repos quotidien de 11 h.</p>`;
+  }
+  // relie les champs du formulaire au brouillon ; rerender() redessine
+  function bindDetails(root, d, rerender) {
+    const num = v => { const x = parseFloat(String(v).replace(",", ".")); return isNaN(x) ? null : x; };
+    root.querySelectorAll("[data-wtype]").forEach(b => b.onclick = () => {
+      const t = b.dataset.wtype; if (t === d.type) return;
+      d.type = t;
+      if (t === "partiel") { d.weekly = Math.round(d.full * d.rate / 100); spread(d); }
+      if (t === "variable") { d.weekly = d.full; spread(d); }
+      if (t === "fixe") d.fixed = d.workdays.map(w => w ? { s: d.fs, e: d.fe } : null);
+      rerender();
+    });
+    root.querySelectorAll("[data-dow]").forEach(b => b.onclick = () => {
+      const w = +b.dataset.dow; d.workdays[w] = !d.workdays[w];
+      if (d.type === "variable" || d.type === "partiel") spread(d);
+      if (d.type === "fixe") d.fixed[w] = d.workdays[w] ? { s: d.fs, e: d.fe } : null;
+      rerender();
+    });
+    root.querySelectorAll("[data-f]").forEach(i => i.addEventListener("change", () => {
+      const f = i.dataset.f, v = i.value;
+      if (f === "weekly") { const h = num(v); if (h) { d.weekly = Math.round(h * 60); d.full = d.weekly; spread(d); } }
+      else if (f === "rate") { const r = num(v); if (r) { d.rate = Math.max(5, Math.min(100, Math.round(r))); d.weekly = Math.round(d.full * d.rate / 100); spread(d); } }
+      else if (f === "full") { const h = num(v); if (h) { d.full = Math.round(h * 60); d.weekly = Math.round(d.full * d.rate / 100); spread(d); } }
+      else if (f === "winStart") d.winStart = toMin(v) ?? d.winStart;
+      else if (f === "minOut") d.minOut = toMin(v);
+      else if (f === "fs" || f === "fe") { const m = toMin(v); if (m != null) { d[f] = m; d.fixed = d.fixed.map(x => x ? { s: d.fs, e: d.fe } : null); } }
+      else if (f === "rotNow") d.rotNow = +v;
+      else if (f === "forfaitDays") { const n = num(v); if (n) d.forfaitDays = Math.round(n); }
+      else if (f in d) d[f] = v;
+      rerender();
+    }));
+    root.querySelectorAll("[data-sched]").forEach(i => i.addEventListener("change", () => { d.sched[+i.dataset.sched] = toMin(i.value) || 0; d.weekly = d.sched.reduce((a, b) => a + b, 0); rerender(); }));
+    root.querySelectorAll("[data-fx]").forEach(i => i.addEventListener("change", () => { const w = +i.dataset.fx, m = toMin(i.value); if (m != null && d.fixed[w]) d.fixed[w][i.dataset.p] = m; rerender(); }));
+    root.querySelectorAll("[data-sh]").forEach(i => i.addEventListener("change", () => { const x = d.shifts[+i.dataset.sh]; if (i.dataset.p === "name") x.name = i.value.trim() || x.name; else { const m = toMin(i.value); if (m != null) x[i.dataset.p] = m; } rerender(); }));
+    root.querySelectorAll("[data-shdel]").forEach(b => b.onclick = () => { const x = d.shifts.splice(+b.dataset.shdel, 1)[0]; d.rotation = d.rotation.map(id => id === x.id ? "off" : id); rerender(); });
+    root.querySelectorAll("[data-rot]").forEach(i => i.addEventListener("change", () => { d.rotation[+i.dataset.rot] = i.value; rerender(); }));
+    root.querySelectorAll("[data-rotdel]").forEach(b => b.onclick = () => { d.rotation.splice(+b.dataset.rotdel, 1); d.rotNow = Math.min(d.rotNow, d.rotation.length - 1); rerender(); });
+    const sa = root.querySelector("#sh-add"); if (sa) sa.onclick = () => { d.shifts.push({ id: "s" + Date.now().toString(36), name: "Poste " + (d.shifts.length + 1), s: 480, e: 960 }); rerender(); };
+    const ra = root.querySelector("#rot-add"); if (ra) ra.onclick = () => { d.rotation.push(d.shifts[d.rotation.length % d.shifts.length].id); rerender(); };
+  }
+  function checkDraft(d) {
+    if (["variable", "partiel", "fixe", "equipes", "forfait"].includes(d.type) && !d.workdays.some(Boolean)) return "Choisis au moins un jour travaillé.";
+    if ((d.type === "variable" || d.type === "partiel") && !d.weekly) return "Indique tes heures par semaine.";
+    if (d.type === "fixe" && d.fs === d.fe) return "Le début et la fin doivent être différents.";
+    if (d.type === "equipes" && !d.rotation.some(id => id !== "off")) return "Ajoute au moins un poste dans la rotation.";
+    return null;
+  }
+  const workSummary = s => {
+    const d = draftFrom(s);
+    if (s.type === "variable") return `${hm(d.weekly)} par semaine · ${daysTxt(d.workdays)}`;
+    if (s.type === "partiel") return `${s.rate} % · ${hm(d.weekly)} par semaine · ${daysTxt(d.workdays)}`;
+    if (s.type === "fixe") { const f = s.fixed.find(Boolean); return f ? `${clock(f.s)} – ${clock(f.e)} · ${daysTxt(d.workdays)}` : "Aucun jour"; }
+    if (s.type === "equipes") return `${plural(s.shifts.length, "poste")} · rotation sur ${plural(s.rotation.length, "semaine")}`;
+    return `${s.forfaitDays} jours par an · ${daysTxt(d.workdays)}`;
+  };
+
+  function openWork(draft) {
+    const d = draft || draftFrom(state.settings);
+    const draw = () => keepScroll(() => {
+      openSheet(`<h3>Type d'horaires</h3>${typeChoices(d)}${detailsHTML(d)}
+        <p class="err" id="wk-err" hidden></p>
+        <div class="row"><button class="ghost" id="wk-cancel">Annuler</button><button class="cta" id="wk-save">Enregistrer</button></div>`);
+      const root = sheetEl();
+      bindDetails(root, d, draw);
+      $("wk-cancel").onclick = closeSheet;
+      $("wk-save").onclick = () => { const e = checkDraft(d); if (e) { $("wk-err").textContent = e; $("wk-err").hidden = false; return; } applyDraft(d); closeSheet(); render(); renderSettings(); toast("Horaires enregistrés"); };
+    });
+    draw();
+  }
+  function openProfile() {
+    const s = state.settings;
+    openSheet(`<h3>Ton profil</h3>
+      <div class="list">
+        <label class="item"><span>Prénom</span><input type="text" id="pf-first" value="${esc(s.name)}" autocomplete="given-name" placeholder="Prénom"></label>
+        <label class="item"><span>Nom</span><input type="text" id="pf-last" value="${esc(s.lastName)}" autocomplete="family-name" placeholder="Facultatif"></label>
+        <label class="item"><span>Entreprise</span><input type="text" id="pf-co" value="${esc(s.company)}" autocomplete="organization" placeholder="Facultatif"></label>
+      </div>
+      <div class="sect">Où tu travailles</div>
+      <div class="choices">${Object.keys(REGIONS).map(r => `<button class="choice${s.holidays === r ? " on" : ""}" data-region="${r}"><span class="it-m"><b>${REGIONS[r].name}</b><small>${REGIONS[r].desc}</small></span><span class="radio"></span></button>`).join("")}</div>
+      <p class="note">Tes infos restent sur ton téléphone. Elles servent à personnaliser l'appli et tes exports.</p>
+      <div class="row"><button class="ghost" id="pf-cancel">Annuler</button><button class="cta" id="pf-save">Enregistrer</button></div>`);
+    let region = s.holidays;
+    scrim.querySelectorAll("[data-region]").forEach(b => b.onclick = () => { region = b.dataset.region; scrim.querySelectorAll("[data-region]").forEach(x => x.classList.toggle("on", x === b)); });
+    $("pf-cancel").onclick = closeSheet;
+    $("pf-save").onclick = () => { Object.assign(s, { name: $("pf-first").value.trim(), lastName: $("pf-last").value.trim(), company: $("pf-co").value.trim(), holidays: region }); lsWrite(); closeSheet(); render(); renderSettings(); toast("Profil enregistré"); };
+  }
+
+  // ---------- accueil (premier lancement) ----------
+  function openOnboarding() {
+    const d = draftFrom(state.settings);
+    if (!state.settings.onboarded) { d.offered = 0; d.minOut = null; }
+    let step = 0;
+    const STEPS = 6;
+    const box = $("onb"); box.hidden = false;
+    const go = n => { step = n; draw(); box.scrollTop = 0; };
+    function draw() {
+      const y = box.scrollTop;
+      const dots = `<div class="steps">${Array.from({ length: STEPS }, (_, i) => `<i class="${i === step ? "on" : ""}"></i>`).join("")}</div>`;
+      let body = "", next = "Continuer", back = step > 0;
+      if (step === 0) {
+        body = `<div class="hero-mark">${MARK}</div>
+          <h2 style="text-align:center">Bienvenue sur Balancier<span style="color:var(--accent)">.</span></h2>
+          <p class="lead" style="text-align:center">Pointe tes heures, suis ton compteur, sache à quelle heure tu peux partir. Le tout réglé sur ton type d'horaires.</p>
+          <p class="note" style="text-align:center">Tout reste sur ton téléphone. Pas de compte, pas de pub.</p>`;
+        next = "Commencer";
+      } else if (step === 1) {
+        body = `<h2>Faisons connaissance</h2><p class="lead">Pour te dire bonjour et personnaliser tes exports.</p>
+          <div class="list">
+            <label class="item"><span>Prénom</span><input type="text" id="ob-first" value="${esc(d.name)}" autocomplete="given-name" placeholder="Prénom"></label>
+            <label class="item"><span>Nom</span><input type="text" id="ob-last" value="${esc(d.lastName)}" autocomplete="family-name" placeholder="Facultatif"></label>
+            <label class="item"><span>Entreprise</span><input type="text" id="ob-co" value="${esc(d.company)}" autocomplete="organization" placeholder="Facultatif"></label>
+          </div><p class="err" id="ob-err" hidden></p>`;
+      } else if (step === 2) {
+        body = `<h2>Où travailles-tu ?</h2><p class="lead">Pour les jours fériés et la durée légale.</p>
+          <div class="choices">${Object.keys(REGIONS).map(r => `<button class="choice${d.region === r ? " on" : ""}" data-region="${r}"><span class="it-m"><b>${REGIONS[r].name}</b><small>${REGIONS[r].desc}</small></span><span class="radio"></span></button>`).join("")}</div>`;
+      } else if (step === 3) {
+        body = `<h2>Ton type d'horaires</h2><p class="lead">Tu pourras le changer à tout moment dans Réglages.</p>${typeChoices(d)}`;
+      } else if (step === 4) {
+        body = `<h2>${WORK[d.type].name}</h2><p class="lead">Les détails de ton planning.</p>${detailsHTML(d)}<p class="err" id="ob-err" hidden></p>`;
+      } else {
+        body = `<h2>Pauses et congés</h2><p class="lead">Pour que ton compteur colle à ton contrat.</p>
+          <div class="list">
+            <label class="item"><span>Pause de midi minimum (min)<small>Non payée</small></span><input type="number" inputmode="numeric" min="0" max="180" data-p="pauseMin" value="${d.pauseMin}" style="max-width:70px"></label>
+            <label class="item"><span>Pauses payées par jour (min)<small>Ex. 20 min offertes : 0 si aucune</small></span><input type="number" inputmode="numeric" min="0" max="120" data-p="offered" value="${d.offered}" style="max-width:70px"></label>
+            <label class="item"><span>Jours de congé par an</span><input type="number" inputmode="decimal" step="0.5" min="0" max="60" data-p="vacDays" value="${d.vacDays}" style="max-width:70px"></label>
+            ${d.type !== "forfait" ? `<label class="item"><span>Maximum par semaine (h)<small>Pour être prévenu</small></span><input type="number" inputmode="decimal" step="0.5" min="0" max="80" data-p="maxWeek" value="${d.maxWeek ? d.maxWeek / 60 : ""}" style="max-width:70px"></label>` : ""}
+          </div>
+          <div class="card" style="padding:4px 16px">
+            <div class="sum-line"><span>Profil</span><b>${esc([d.name, d.lastName].filter(Boolean).join(" ") || "—")}</b></div>
+            <div class="sum-line"><span>Horaires</span><b>${WORK[d.type].name}</b></div>
+            <div class="sum-line"><span>Fériés</span><b>${REGIONS[d.region].name}</b></div>
+          </div>`;
+        next = "C'est parti";
+      }
+      box.innerHTML = `<div class="onb-in">${dots}${body}
+        ${step === 0 ? `<button class="link" id="ob-import">J'ai déjà une sauvegarde</button>` : ""}
+        <div class="onb-nav">${back ? `<button class="ghost" id="ob-back">Retour</button>` : ""}<button class="cta" id="ob-next">${next}</button></div></div>`;
+      box.scrollTop = y;
+      const keepIdentity = () => { if ($("ob-first")) { d.name = $("ob-first").value; d.lastName = $("ob-last").value; d.company = $("ob-co").value; } };
+      box.querySelectorAll("[data-region]").forEach(b => b.onclick = () => {
+        d.region = b.dataset.region; d.full = FULL[d.region]; d.weekly = d.full; spread(d);
+        if (d.region === "FR") { d.maxWeek = 2880; }
+        draw();
+      });
+      if (step === 3 || step === 4) bindDetails(box, d, draw);
+      box.querySelectorAll("[data-p]").forEach(i => i.addEventListener("change", () => { const x = parseFloat(String(i.value).replace(",", ".")); const f = i.dataset.p; d[f] = isNaN(x) ? (f === "maxWeek" ? 0 : d[f]) : (f === "maxWeek" ? Math.round(x * 60) : x); }));
+      if ($("ob-import")) $("ob-import").onclick = () => $("imp-any").click();
+      if ($("ob-back")) $("ob-back").onclick = () => { keepIdentity(); go(step - 1); };
+      $("ob-next").onclick = () => {
+        const err = m => { const e = $("ob-err"); if (e) { e.textContent = m; e.hidden = false; } };
+        if (step === 1) { keepIdentity(); if (!d.name.trim()) return err("Indique au moins ton prénom."); }
+        if (step === 4) { const e = checkDraft(d); if (e) return err(e); }
+        if (step < STEPS - 1) return go(step + 1);
+        box.querySelectorAll("[data-p]").forEach(i => i.dispatchEvent(new Event("change")));
+        applyDraft(d); box.hidden = true; box.innerHTML = ""; showTab("today");
+        toast(`Bienvenue, ${d.name.trim()} !`);
+      };
+    }
+    draw();
+  }
+
   // ---------- Réglages ----------
   function renderSettings() {
-    const s = state.settings, D = ["Lundi", "Mardi", "Mercredi", "Jeudi", "Vendredi", "Samedi", "Dimanche"], idx = [1, 2, 3, 4, 5, 6, 0];
-    const mode = themeMode();
+    const s = state.settings, mode = themeMode(), F = isForfait();
+    const full = [s.name, s.lastName].filter(Boolean).join(" ");
+    const initials = ((s.name || "")[0] || "") + ((s.lastName || "")[0] || "");
     const v = $("v-set");
     v.innerHTML = `
+      <button class="card rowcard" id="st-prof"><span class="avatar">${esc(initials.toUpperCase() || "?")}</span><span class="it-m"><b>${esc(full || "Ton profil")}</b><small>${esc([s.company, REGIONS[s.holidays] ? REGIONS[s.holidays].name : ""].filter(Boolean).join(" · "))}</small></span><span class="chev">›</span></button>
+      <div class="sect">Horaires</div>
+      <div class="list"><button class="item" id="st-work"><span class="ico blue">${ic(WORK[s.type].ico)}</span><span class="it-m"><b>${WORK[s.type].name}</b><small class="num">${esc(workSummary(s))}</small></span><span class="chev">›</span></button></div>
+      <div class="sect">Pauses et limites</div>
       <div class="list">
-        <label class="item"><span>Ton prénom<small>Pour te dire bonjour</small></span><input type="text" id="st-name" value="${esc(s.name || "")}" placeholder="Facultatif" autocomplete="given-name" style="max-width:150px"></label>
-      </div>
-      <div class="sect">Apparence</div>
-      <div class="list">
-        <div style="padding:12px 0"><div class="seg">${[["auto", "Auto"], ["light", "Clair"], ["dark", "Sombre"]].map(([val, l]) => `<button data-theme="${val}" class="${s.theme === val ? "on" : ""}">${l}</button>`).join("")}</div></div>
-        <div class="swatches" style="border-top:1px solid var(--sep)">${Object.keys(ACCENTS).map(k => `<button class="sw${s.accent === k ? " on" : ""}" data-accent="${k}"><i style="background:${ACCENTS[k][mode][0]}"></i>${ACCENTS[k].name}</button>`).join("")}</div>
-      </div>
-      <div class="sect">Horaire de la semaine</div>
-      <div class="list">${idx.map((di, i) => `<label class="item"><span>${D[i]}</span><input type="time" data-sched="${di}" value="${s.sched[di] ? clock(s.sched[di]) : ""}"></label>`).join("")}</div>
-      <p class="note">Durée à faire chaque jour. Laisse vide pour un jour non travaillé.</p>
-      <div class="sect">Règles</div>
-      <div class="list">
-        <label class="item"><span>Pause offerte par jour (min)<small>Pauses courtes payées : comptées comme du travail</small></span><input type="number" inputmode="numeric" min="0" max="120" id="st-off" value="${s.offered || 0}" style="max-width:70px"></label>
+        <label class="item"><span>Pauses payées par jour (min)<small>Pauses courtes comptées comme du travail</small></span><input type="number" inputmode="numeric" min="0" max="120" id="st-off" value="${s.offered || 0}" style="max-width:70px"></label>
         <label class="item"><span>Pause de midi minimum (min)<small>Non payée, déduite si elle est plus courte</small></span><input type="number" inputmode="numeric" min="0" max="180" id="st-pause" value="${s.pauseMin}" style="max-width:70px"></label>
-        <label class="item"><span>Arrivée possible dès</span><input type="time" id="st-ws" value="${clock(s.winStart)}"></label>
-        <label class="item"><span>Compter seulement dès cette heure</span><input type="checkbox" class="toggle" id="st-clamp" ${s.clampStart ? "checked" : ""}></label>
-        <label class="item"><span>Sortie au plus tôt<small>Vide = pas de limite</small></span><input type="time" id="st-minout" value="${s.minOut != null ? clock(s.minOut) : ""}"></label>
-        <label class="item"><span>Maximum par semaine (h)</span><input type="number" inputmode="decimal" min="0" max="80" step="0.5" id="st-maxw" value="${s.maxWeek ? s.maxWeek / 60 : ""}" style="max-width:70px"></label>
+        ${isFlex() ? `<label class="item"><span>Compter seulement dès ${clock(s.winStart)}<small>Les minutes avant la plage ne comptent pas</small></span><input type="checkbox" class="toggle" id="st-clamp" ${s.clampStart ? "checked" : ""}></label>` : ""}
+        ${F ? "" : `<label class="item"><span>Maximum par semaine (h)</span><input type="number" inputmode="decimal" min="0" max="80" step="0.5" id="st-maxw" value="${s.maxWeek ? s.maxWeek / 60 : ""}" style="max-width:70px"></label>`}
       </div>
       <div class="sect">Absences</div>
       <div class="list">
-        <label class="item"><span>Jours fériés</span><select id="st-hol"><option value="GE" ${s.holidays === "GE" ? "selected" : ""}>Genève</option><option value="none" ${s.holidays !== "GE" ? "selected" : ""}>Aucun</option></select></label>
+        <label class="item"><span>Jours fériés</span><select id="st-hol">${Object.keys(REGIONS).map(r => `<option value="${r}" ${s.holidays === r ? "selected" : ""}>${r === "none" ? "Aucun" : REGIONS[r].name}</option>`).join("")}</select></label>
         <label class="item"><span>Jours de congé par an</span><input type="number" inputmode="decimal" min="0" max="60" step="0.5" id="st-vac" value="${s.vacDays}" style="max-width:70px"></label>
         <label class="item"><span>Télétravail max par an (j)<small>Vide = pas de plafond</small></span><input type="number" inputmode="numeric" min="0" max="365" id="st-rcap" value="${s.remoteCap || ""}" style="max-width:70px"></label>
       </div>
       <div class="sect">Trajets</div>
       <div class="list">
         <label class="item"><span>Domicile</span><input type="text" id="st-home" list="dl-stops" placeholder="Adresse ou arrêt" value="${esc(s.transit.home)}" autocomplete="off"></label>
-        <label class="item"><span>Travail</span><input type="text" id="st-work" list="dl-stops" placeholder="Adresse ou arrêt" value="${esc(s.transit.work)}" autocomplete="off"></label>
+        <label class="item"><span>Travail</span><input type="text" id="st-work-addr" list="dl-stops" placeholder="Adresse ou arrêt" value="${esc(s.transit.work)}" autocomplete="off"></label>
         <label class="item"><span>Temps pour quitter le travail (min)<small>Vestiaire, badge, ascenseur…</small></span><input type="number" inputmode="numeric" min="0" max="60" id="st-margin" value="${s.transit.margin}" style="max-width:70px"></label>
       </div>
       <datalist id="dl-stops"></datalist>
       <p class="note">Le matin, Balancier affiche le prochain départ de chez toi. En poste, il te dit quand quitter le travail pour attraper le bon transport. Horaires et retards en temps réel (CFF, TPG, Léman Express…).</p>
       <button class="cta" id="st-save">Enregistrer les réglages</button>
+      <div class="sect">Apparence</div>
+      <div class="list">
+        <div style="padding:12px 0"><div class="seg">${[["auto", "Auto"], ["light", "Clair"], ["dark", "Sombre"]].map(([val, l]) => `<button data-theme="${val}" class="${s.theme === val ? "on" : ""}">${l}</button>`).join("")}</div></div>
+        <div class="swatches" style="border-top:1px solid var(--sep)">${Object.keys(ACCENTS).map(k => `<button class="sw${s.accent === k ? " on" : ""}" data-accent="${k}"><i style="background:${ACCENTS[k][mode][0]}"></i>${ACCENTS[k].name}</button>`).join("")}</div>
+      </div>
       <div class="sect">Sauvegarde</div>
-      <p class="note">Tes pointages sont enregistrés sur cet iPhone. Exporte une copie de temps en temps (dans Fichiers ou iCloud Drive).</p>
-      <div class="row"><button class="ghost" id="bk-exp">Exporter</button><label class="ghost">Importer<input type="file" id="bk-imp" accept="application/json,.json" hidden></label></div>
-      <p class="note" id="bk-msg" hidden></p>`;
+      <p class="note">Tes pointages sont enregistrés sur ce téléphone. Exporte une copie de temps en temps (dans Fichiers ou iCloud Drive).</p>
+      <div class="row"><button class="ghost" id="bk-exp">Exporter</button><button class="ghost" id="bk-imp">Importer</button></div>
+      <button class="link" id="st-redo">Refaire la configuration</button>`;
+    $("st-prof").onclick = openProfile;
+    $("st-work").onclick = () => openWork();
+    $("st-redo").onclick = openOnboarding;
     v.querySelectorAll("[data-accent]").forEach(b => b.onclick = () => { state.settings.accent = b.dataset.accent; saveSettings(); renderSettings(); });
     v.querySelectorAll("[data-theme]").forEach(b => b.onclick = () => { state.settings.theme = b.dataset.theme; saveSettings(); renderSettings(); });
     let acT;
-    ["st-home", "st-work"].forEach(id => $(id).addEventListener("input", e => {
+    ["st-home", "st-work-addr"].forEach(id => $(id).addEventListener("input", e => {
       clearTimeout(acT); const q = e.target.value.trim(); if (q.length < 3) return;
       acT = setTimeout(async () => {
         try {
@@ -1243,38 +1642,39 @@ svg.i{width:20px;height:20px;fill:none;stroke:currentColor;stroke-width:1.9;stro
       }, 300);
     }));
     $("st-save").onclick = () => {
-      const num = (id, def) => { const val = parseFloat(String($(id).value).replace(",", ".")); return isNaN(val) ? def : val; };
-      const sched = [...state.settings.sched];
-      v.querySelectorAll("[data-sched]").forEach(i => { sched[+i.dataset.sched] = toMin(i.value) || 0; });
-      state.settings = {
-        ...state.settings, sched, name: $("st-name").value.trim(),
+      const num = (id, def) => { const el = $(id); if (!el) return def; const val = parseFloat(String(el.value).replace(",", ".")); return isNaN(val) ? def : val; };
+      Object.assign(state.settings, {
         pauseMin: Math.max(0, Math.round(num("st-pause", 30))), offered: Math.max(0, Math.round(num("st-off", 0))),
-        winStart: toMin($("st-ws").value) ?? 390, clampStart: $("st-clamp").checked,
-        minOut: toMin($("st-minout").value), maxWeek: Math.round(num("st-maxw", 0) * 60),
+        clampStart: $("st-clamp") ? $("st-clamp").checked : s.clampStart,
+        maxWeek: $("st-maxw") ? Math.round(num("st-maxw", 0) * 60) : s.maxWeek,
         holidays: $("st-hol").value, vacDays: num("st-vac", 25), remoteCap: Math.round(num("st-rcap", 0)),
-        transit: { home: $("st-home").value.trim(), work: $("st-work").value.trim(), margin: Math.max(0, Math.round(num("st-margin", 5))) }
-      };
-      trKey = null; saveSettings(); toast("Réglages enregistrés");
+        transit: { home: $("st-home").value.trim(), work: $("st-work-addr").value.trim(), margin: Math.max(0, Math.round(num("st-margin", 5))) }
+      });
+      trKey = null; saveSettings(); renderSettings(); toast("Réglages enregistrés");
     };
-    $("st-name").addEventListener("change", e => { state.settings.name = e.target.value.trim(); lsWrite(); });
-    const bkMsg = m => { const el = $("bk-msg"); el.textContent = m; el.hidden = false; };
     $("bk-exp").onclick = () => shareFile("balancier-" + dateKey(new Date()) + ".json", JSON.stringify(state, null, 1), "application/json");
-    $("bk-imp").onchange = e => {
-      const f = e.target.files && e.target.files[0]; if (!f) return;
-      const rd = new FileReader();
-      rd.onload = () => {
-        try {
-          const data = JSON.parse(rd.result);
-          if (!data || typeof data.days !== "object") throw 0;
-          let n = 0;
-          Object.keys(data.days).forEach(k => { if (/^\d{4}-\d{2}-\d{2}$/.test(k)) { const r = norm(data.days[k]); if (meaningful(r)) { state.days[k] = r; n++; } } });
-          if (data.settings) state.settings = migrateSettings(data.settings);
-          lsWrite(); renderSettings(); render(); toast(plural(n, "journée") + " importée" + (n > 1 ? "s" : ""));
-        } catch (err) { bkMsg("Fichier non reconnu. Choisis un fichier exporté depuis Balancier."); }
-      };
-      rd.readAsText(f);
-    };
+    $("bk-imp").onclick = () => $("imp-any").click();
   }
+  $("imp-any").onchange = e => {
+    const f = e.target.files && e.target.files[0]; if (!f) return;
+    const rd = new FileReader();
+    rd.onload = () => {
+      try {
+        const data = JSON.parse(rd.result);
+        if (!data || typeof data.days !== "object") throw 0;
+        let n = 0;
+        Object.keys(data.days).forEach(k => { if (/^\d{4}-\d{2}-\d{2}$/.test(k)) { const r = norm(data.days[k]); if (meaningful(r)) { state.days[k] = r; n++; } } });
+        if (data.settings) state.settings = migrateSettings(data.settings, true);
+        state.settings.onboarded = true;
+        lsWrite();
+        $("onb").hidden = true; $("onb").innerHTML = "";
+        if (tab === "set") renderSettings();
+        render(); toast(plural(n, "journée") + " importée" + (n > 1 ? "s" : ""));
+      } catch (err) { toast("Fichier non reconnu : choisis un export de Balancier."); }
+      e.target.value = "";
+    };
+    rd.readAsText(f);
+  };
 
   // ---------- toast ----------
   let tt;
@@ -1287,11 +1687,12 @@ svg.i{width:20px;height:20px;fill:none;stroke:currentColor;stroke-width:1.9;stro
   }
 
   render();
+  if (!state.settings.onboarded) openOnboarding();
   setInterval(tick, 5000);
   document.addEventListener("visibilitychange", () => { if (!document.hidden) { trKey = null; render(); } });
   try { navigator.storage && navigator.storage.persist && navigator.storage.persist(); } catch (e) {}
   if ("serviceWorker" in navigator) navigator.serviceWorker.register("sw.js").catch(() => {});
-  window.__b = { calc, calcK, holidaysGE, state: () => state, showTab };
+  window.__b = { calc, calcK, planFor, activeKey, state: () => state, showTab, openOnboarding };
 })();
 </script>
 </body>
